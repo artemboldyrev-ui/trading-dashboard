@@ -6,128 +6,66 @@
 <title>Trading Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
-
-:root {
-  --bg: #0a0c0f;
-  --bg2: #111318;
-  --bg3: #181c23;
-  --border: #1e2530;
-  --border2: #2a3140;
-  --text: #c8d0dc;
-  --text2: #6b7a8d;
-  --text3: #3d4a58;
-  --accent: #00d4aa;
-  --accent2: #0099ff;
-  --red: #ff4d6a;
-  --yellow: #f5c842;
-  --font-mono: 'IBM Plex Mono', monospace;
-  --font: 'IBM Plex Sans', sans-serif;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
-
-/* TOPBAR */
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 32px; height: 52px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg); position: sticky; top: 0; z-index: 100;
-}
-.logo { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; }
-.logo span { color: var(--text3); }
-.topbar-right { display: flex; align-items: center; gap: 10px; }
-
-.btn { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 14px; border-radius: 3px; border: none; cursor: pointer; transition: all 0.15s; }
-.btn-primary { background: var(--accent); color: #000; }
-.btn-primary:hover { background: #00f0c0; }
-.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-.btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(255,77,106,0.3); font-size: 10px; }
-.btn-danger:hover { background: rgba(255,77,106,0.08); }
-
-/* AUTH */
-#auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 52px); gap: 0; padding: 40px 20px; }
-.auth-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 44px 52px; max-width: 460px; width: 100%; text-align: center; }
-.auth-icon { font-size: 36px; margin-bottom: 20px; }
-.auth-card h2 { font-family: var(--font-mono); font-size: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); margin-bottom: 10px; }
-.auth-card p { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 28px; }
-.config-label { font-family: var(--font-mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-.config-input { background: var(--bg3); border: 1px solid var(--border2); border-radius: 3px; padding: 9px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text); width: 100%; outline: none; transition: border-color 0.15s; margin-bottom: 12px; }
-.config-input:focus { border-color: var(--accent); }
-.config-input::placeholder { color: var(--text3); }
-.auth-note { font-size: 10px; color: var(--text3); margin-top: 14px; line-height: 1.5; }
-.auth-note a { color: var(--accent2); text-decoration: none; }
-
-/* MAIN */
-.main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
-#dashboard { display: none; }
-
-/* SELECTOR BAR */
-.selector-bar {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 6px; padding: 16px 20px; margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.sel-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); white-space: nowrap; }
-.sel-group { display: flex; flex-direction: column; gap: 4px; }
-.sel-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-.pill {
-  font-family: var(--font-mono); font-size: 11px;
-  padding: 5px 12px; border-radius: 3px; cursor: pointer;
-  border: 1px solid var(--border2); color: var(--text2);
-  background: var(--bg3); transition: all 0.15s; white-space: nowrap;
-}
-.pill:hover { border-color: var(--text2); color: var(--text); }
-.pill.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,170,0.08); }
-.pill.date-pill { font-size: 10px; }
-
-.sel-divider { width: 1px; height: 36px; background: var(--border); margin: 0 4px; }
-.sel-spacer { flex: 1; }
-
-/* STATS */
-.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
-.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; }
-.stat-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 6px; }
-.stat-value { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
-.stat-value.pos { color: var(--accent); }
-.stat-value.neg { color: var(--red); }
-.stat-sub { font-family: var(--font-mono); font-size: 9px; color: var(--text3); margin-top: 3px; }
-
-/* CHART */
-.chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 22px; margin-bottom: 20px; }
-.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.chart-title { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); }
-.chart-legend { display: flex; gap: 16px; }
-.legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text2); }
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-.chart-wrap { position: relative; height: 360px; }
-
-/* CORR */
-.corr-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 22px; margin-bottom: 20px; }
-.section-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 14px; }
-.corr-table { width: 100%; border-collapse: collapse; }
-.corr-table th { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 7px 12px; border-bottom: 1px solid var(--border); font-weight: 400; text-align: right; }
-.corr-table th:first-child { text-align: left; }
-.corr-table td { font-family: var(--font-mono); font-size: 12px; padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: right; }
-.corr-table td:first-child { text-align: left; color: var(--text2); font-size: 11px; }
-.corr-pos { color: var(--accent); font-weight: 500; }
-.corr-neg { color: var(--red); font-weight: 500; }
-.corr-neu { color: var(--text2); }
-.corr-self { color: var(--text3); }
-
-/* EMPTY / LOADING */
-.empty { text-align: center; padding: 48px; color: var(--text3); font-family: var(--font-mono); font-size: 11px; line-height: 2; }
-.loading-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
-.spinner { width: 12px; height: 12px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* TOAST */
-.toast { position: fixed; bottom: 20px; right: 20px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 4px; padding: 10px 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text); z-index: 9999; opacity: 0; transform: translateY(6px); transition: all 0.2s; pointer-events: none; }
-.toast.show { opacity: 1; transform: translateY(0); }
-.toast.error { border-color: rgba(255,77,106,0.4); color: var(--red); }
-.toast.success { border-color: rgba(0,212,170,0.4); color: var(--accent); }
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+  :root {
+    --bg:#0a0c0f; --bg2:#111318; --bg3:#181c23;
+    --border:#1e2530; --border2:#2a3140;
+    --text:#c8d0dc; --text2:#6b7a8d; --text3:#3d4a58;
+    --accent:#00d4aa; --red:#ff4d6a;
+    --font-mono:'IBM Plex Mono',monospace; --font:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100}
+  .logo{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
+  .logo span{color:var(--text2);font-weight:300}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .btn{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:7px 16px;border-radius:3px;border:none;cursor:pointer;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00f0c0}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(255,77,106,.3);font-size:10px;padding:5px 10px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .main{padding:28px 32px;max-width:1400px;margin:0 auto}
+  /* AUTH */
+  #auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
+  .auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:48px 56px;max-width:480px;width:100%;text-align:center}
+  .auth-icon{font-size:40px;margin-bottom:24px}
+  .auth-card h2{font-family:var(--font-mono);font-size:16px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text);margin-bottom:12px}
+  .auth-card p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:32px}
+  .auth-config{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;text-align:left}
+  .config-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+  .config-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:10px 14px;font-family:var(--font-mono);font-size:12px;color:var(--text);width:100%;outline:none;transition:border-color .15s}
+  .config-input:focus{border-color:var(--accent)}
+  .config-input::placeholder{color:var(--text3)}
+  /* DASHBOARD */
+  #dashboard{display:none}
+  .selector-bar{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  .selector-group{display:flex;flex-direction:column;gap:6px}
+  .selector-label{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+  .selector-select{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 14px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none;cursor:pointer;min-width:200px;appearance:none;transition:border-color .15s}
+  .selector-select:focus{border-color:var(--accent)}
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px 20px}
+  .stat-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:8px}
+  .stat-value{font-family:var(--font-mono);font-size:20px;font-weight:500}
+  .pos{color:var(--accent)}.neg{color:var(--red)}
+  .stat-sub{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:4px}
+  .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;margin-bottom:20px}
+  .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .chart-title{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2)}
+  .chart-legend{display:flex;gap:16px}
+  .legend-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--text2)}
+  .legend-dot{width:8px;height:8px;border-radius:50%}
+  .chart-wrap{position:relative;height:400px}
+  .corr-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;margin-bottom:20px}
+  .section-label{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:12px}
+  .corr-big{font-family:var(--font-mono);font-size:32px;font-weight:500}
+  .empty-state{text-align:center;padding:64px;color:var(--text3);font-family:var(--font-mono);font-size:12px;line-height:2}
+  .badge{font-family:var(--font-mono);font-size:11px;color:var(--text2);background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:3px}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:12px 18px;font-family:var(--font-mono);font-size:11px;color:var(--text);z-index:9999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast.error{border-color:rgba(255,77,106,.4);color:var(--red)}
+  .toast.success{border-color:rgba(0,212,170,.4);color:var(--accent)}
 </style>
 </head>
 <body>
@@ -135,413 +73,287 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 <div class="topbar">
   <div class="logo">Trading<span>/</span>Dashboard</div>
   <div class="topbar-right">
-    <span id="folder-badge" style="font-family:var(--font-mono);font-size:10px;color:var(--text3);display:none"></span>
-    <button class="btn btn-ghost" id="btn-refresh" onclick="loadAndIndex()" style="display:none">↻ Refresh</button>
+    <span class="badge" id="folder-badge" style="display:none">📁 —</span>
+    <button class="btn btn-ghost" id="btn-refresh" onclick="loadAndParse()" style="display:none">↻ Refresh</button>
     <button class="btn btn-danger" id="btn-logout" onclick="logout()" style="display:none">Odhlásiť</button>
     <button class="btn btn-primary" id="btn-login" onclick="startAuth()">Pripojiť Google Drive</button>
   </div>
 </div>
 
-<!-- AUTH -->
-<div id="auth-screen">
+<div id="auth-screen" class="main">
   <div class="auth-card">
     <div class="auth-icon">📊</div>
     <h2>Trading Dashboard</h2>
-    <p>Pripoj Google Drive, vyber pár a dátum — graf sa vygeneruje automaticky.</p>
-    <div>
-      <div class="config-label">Google Client ID</div>
-      <input class="config-input" id="client-id-input" placeholder="xxxx.apps.googleusercontent.com" oninput="saveConfig()">
-      <div class="config-label">ID priečinka Trading sheets</div>
-      <input class="config-input" id="folder-id-input" placeholder="1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59" oninput="saveConfig()">
+    <p>Pripoj Google Drive, vyber pár a dátum — grafy sa zobrazia automaticky.</p>
+    <div class="auth-config">
+      <div>
+        <div class="config-label">Google Client ID</div>
+        <input class="config-input" id="client-id-input" type="text" placeholder="xxxx.apps.googleusercontent.com" oninput="saveConfig()">
+      </div>
+      <div>
+        <div class="config-label">ID priečinka Trading sheets</div>
+        <input class="config-input" id="folder-id-input" type="text" placeholder="1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59" oninput="saveConfig()">
+      </div>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:11px" onclick="startAuth()">Pripojiť cez Google</button>
-    <p class="auth-note">Dáta sa nikam neposielajú. Beží len v tvojom prehliadači.</p>
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="startAuth()">Pripojiť cez Google</button>
   </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="main">
-
-  <!-- SELECTOR -->
-  <div class="selector-bar" id="selector-bar">
-    <div class="sel-group">
-      <div class="sel-label">Pár</div>
-      <div class="sel-pills" id="pair-pills"><div class="loading-row"><div class="spinner"></div> Načítavam...</div></div>
+  <div class="selector-bar">
+    <div class="selector-group">
+      <div class="selector-label">Pár</div>
+      <select class="selector-select" id="sel-pair" onchange="onPairChange()">
+        <option value="">— načítavam —</option>
+      </select>
     </div>
-    <div class="sel-divider"></div>
-    <div class="sel-group">
-      <div class="sel-label">Dátum</div>
-      <div class="sel-pills" id="date-pills"><span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">— vyber pár</span></div>
+    <div class="selector-group">
+      <div class="selector-label">Dátum</div>
+      <select class="selector-select" id="sel-date" onchange="onDateChange()">
+        <option value="">— vyber pár —</option>
+      </select>
     </div>
-    <div class="sel-spacer"></div>
-    <button class="btn btn-primary" onclick="analyze()" id="btn-analyze" style="display:none">Analyzovať</button>
+    <button class="btn btn-primary" id="btn-show" onclick="showChart()" disabled>Zobraziť graf</button>
   </div>
-
-  <!-- STATS -->
   <div class="stats-row" id="stats-row" style="display:none"></div>
-
-  <!-- CHART -->
   <div class="chart-card" id="chart-card" style="display:none">
     <div class="chart-header">
-      <div class="chart-title" id="chart-title">Vývoj hodnôt</div>
+      <div class="chart-title" id="chart-title">—</div>
       <div class="chart-legend" id="chart-legend"></div>
     </div>
     <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
   </div>
-
-  <!-- CORR -->
   <div class="corr-card" id="corr-card" style="display:none">
-    <div class="section-label">Korelačná matica</div>
-    <div id="corr-wrap"></div>
+    <div class="section-label">Korelácia páru</div>
+    <div class="corr-big" id="corr-value">—</div>
+    <div class="stat-sub" id="corr-desc" style="margin-top:8px"></div>
   </div>
-
+  <div id="empty-state" class="empty-state">
+    Vyber pár a dátum vyššie.<br>
+    Pomenuj súbory: <strong>NázovPáru DD.MM.YYYY.csv</strong><br>
+    Príklad: <strong>AU&lt;AG 17.3.2026.csv</strong> a <strong>AU&gt;AG 17.3.2026.csv</strong>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script>
-const COLORS = ['#00d4aa', '#0099ff', '#f5c842', '#ff4d6a', '#a78bfa'];
-let tokenClient, accessToken, chartInstance;
-let index = {}; // { pairName: { dateStr: [fileObj, fileObj] } }
-let selectedPair = null, selectedDate = null;
+const COLORS=['#00d4aa','#0099ff'];
+let tokenClient,accessToken,chartInstance,allFiles=[];
 
-// ── CONFIG ──
-function saveConfig() {
-  localStorage.setItem('td_cid', document.getElementById('client-id-input').value.trim());
-  localStorage.setItem('td_fid', document.getElementById('folder-id-input').value.trim());
+function saveConfig(){
+  localStorage.setItem('td_cid',document.getElementById('client-id-input').value.trim());
+  localStorage.setItem('td_fid',document.getElementById('folder-id-input').value.trim());
 }
-function loadConfig() {
-  document.getElementById('client-id-input').value = localStorage.getItem('td_cid') || '';
-  document.getElementById('folder-id-input').value = localStorage.getItem('td_fid') || '1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59';
+function loadConfig(){
+  document.getElementById('client-id-input').value=localStorage.getItem('td_cid')||'';
+  document.getElementById('folder-id-input').value=localStorage.getItem('td_fid')||'1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59';
 }
-function getClientId() { return document.getElementById('client-id-input').value.trim(); }
-function getFolderId() { return document.getElementById('folder-id-input').value.trim(); }
+function getFolderId(){return document.getElementById('folder-id-input').value.trim();}
 
-// ── AUTH ──
-function startAuth() {
-  const cid = getClientId();
-  if (!cid) { showToast('Vlož Client ID', 'error'); return; }
+function startAuth(){
+  const cid=document.getElementById('client-id-input').value.trim();
+  if(!cid){showToast('Vlož Client ID','error');return;}
   saveConfig();
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: cid,
-    scope: 'https://www.googleapis.com/auth/drive.readonly',
-    callback: (resp) => {
-      if (resp.error) { showToast('Chyba: ' + resp.error, 'error'); return; }
-      accessToken = resp.access_token;
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:cid,
+    scope:'https://www.googleapis.com/auth/drive.readonly',
+    callback:resp=>{
+      if(resp.error){showToast('Chyba: '+resp.error,'error');return;}
+      accessToken=resp.access_token;
       onLoggedIn();
     }
   });
   tokenClient.requestAccessToken();
 }
 
-function onLoggedIn() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  document.getElementById('btn-login').style.display = 'none';
-  document.getElementById('btn-logout').style.display = 'block';
-  document.getElementById('btn-refresh').style.display = 'block';
-  loadAndIndex();
+function onLoggedIn(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('btn-login').style.display='none';
+  document.getElementById('btn-logout').style.display='block';
+  document.getElementById('btn-refresh').style.display='block';
+  showToast('Pripojené ✓','success');
+  loadAndParse();
 }
 
-function logout() {
-  accessToken = null; index = {}; selectedPair = null; selectedDate = null;
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('btn-login').style.display = 'block';
-  document.getElementById('btn-logout').style.display = 'none';
-  document.getElementById('btn-refresh').style.display = 'none';
-  document.getElementById('folder-badge').style.display = 'none';
-  hideAnalysis();
+function logout(){
+  accessToken=null;allFiles=[];
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('btn-login').style.display='block';
+  document.getElementById('btn-logout').style.display='none';
+  document.getElementById('btn-refresh').style.display='none';
+  document.getElementById('folder-badge').style.display='none';
 }
 
-// ── DRIVE ──
-async function driveAPI(url) {
-  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
-  if (!r.ok) { if (r.status === 401) logout(); throw new Error('Drive API ' + r.status); }
+async function driveAPI(url){
+  const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
+  if(!r.ok){if(r.status===401)logout();throw new Error('API '+r.status);}
   return r.json();
 }
 
-// ── PARSE FILENAME ──
-// Expects: "AU<AG 17.3.2026" or "MultiSys7110 17.3.2026"
-// Returns: { pair, date } where date is normalized "17.3.2026"
-function parseFilename(name) {
-  // Remove .csv extension
-  const base = name.replace(/\.csv$/i, '').trim();
-  // Match date pattern: one or more digits, dot, digits, dot, digits at end
-  const m = base.match(/^(.+?)\s+(\d{1,2}\.\d{1,2}\.\d{4})$/);
-  if (m) return { pair: m[1].trim(), date: m[2].trim() };
-  // Try alternative: date in middle or other formats
-  const m2 = base.match(/^(.+?)\s+(\d{1,2}[\.\-]\d{1,2}[\.\-]\d{4})$/);
-  if (m2) return { pair: m2[1].trim(), date: m2[2].replace(/-/g, '.').trim() };
-  return null;
+function parseFilename(name){
+  const base=name.replace(/\.csv$/i,'').trim();
+  const m=base.match(/(\d{1,2}\.\d{1,2}\.\d{2,4})\s*$/);
+  if(!m)return null;
+  const dateRaw=m[1];
+  const pair=base.slice(0,base.lastIndexOf(dateRaw)).trim();
+  if(!pair)return null;
+  const pts=dateRaw.split('.');
+  const d=pts[0].padStart(2,'0'),mo=pts[1].padStart(2,'0');
+  let y=pts[2];if(y.length===2)y='20'+y;
+  return{pair,dateSort:`${y}-${mo}-${d}`,dateDisplay:dateRaw};
 }
 
-function normalizeDate(d) {
-  // "17.3.2026" → "2026-03-17" for sorting
-  const parts = d.split('.');
-  if (parts.length !== 3) return d;
-  return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-}
-
-function displayDate(d) {
-  // "17.3.2026" → "17.3.2026"
-  return d;
-}
-
-// ── LOAD & INDEX ──
-async function loadAndIndex() {
-  document.getElementById('pair-pills').innerHTML = '<div class="loading-row"><div class="spinner"></div> Načítavam súbory...</div>';
-  document.getElementById('date-pills').innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">— vyber pár</span>';
-
-  try {
-    const folderId = getFolderId();
-    let query = "(mimeType='text/csv' or name contains '.csv') and trashed=false";
-    if (folderId) query += ` and '${folderId}' in parents`;
-
-    const data = await driveAPI(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)&pageSize=200`
-    );
-
-    // Index files
-    index = {};
-    let unrecognized = 0;
-    for (const f of data.files || []) {
-      const parsed = parseFilename(f.name);
-      if (!parsed) { unrecognized++; continue; }
-      if (!index[parsed.pair]) index[parsed.pair] = {};
-      if (!index[parsed.pair][parsed.date]) index[parsed.pair][parsed.date] = [];
-      index[parsed.pair][parsed.date].push(f);
+async function loadAndParse(){
+  showToast('Načítavam...','');
+  allFiles=[];
+  try{
+    const fid=getFolderId();
+    const q=`(mimeType='text/csv' or name contains '.csv') and '${fid}' in parents and trashed=false`;
+    const data=await driveAPI(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=200`);
+    const folder=await driveAPI(`https://www.googleapis.com/drive/v3/files/${fid}?fields=name`).catch(()=>({name:fid}));
+    const badge=document.getElementById('folder-badge');
+    badge.textContent='📁 '+folder.name;badge.style.display='block';
+    for(const f of(data.files||[])){
+      const p=parseFilename(f.name);
+      if(p)allFiles.push({id:f.id,name:f.name,...p});
     }
+    if(!allFiles.length){showToast('Žiadne CSV súbory nenájdené','error');return;}
+    buildPairSelector();
+    showToast(`Načítaných ${allFiles.length} súborov ✓`,'success');
+  }catch(e){showToast('Chyba: '+e.message,'error');}
+}
 
-    // Update folder badge
-    if (folderId) {
-      const fd = await driveAPI(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`).catch(() => ({ name: '—' }));
-      const badge = document.getElementById('folder-badge');
-      badge.textContent = '📁 ' + fd.name;
-      badge.style.display = 'inline';
+function buildPairSelector(){
+  const pairs=[...new Set(allFiles.map(f=>f.pair))].sort();
+  const sel=document.getElementById('sel-pair');
+  sel.innerHTML='<option value="">— vyber pár —</option>'+pairs.map(p=>`<option value="${p}">${p}</option>`).join('');
+  document.getElementById('sel-date').innerHTML='<option value="">— vyber pár —</option>';
+  document.getElementById('btn-show').disabled=true;
+}
+
+function onPairChange(){
+  const pair=document.getElementById('sel-pair').value;
+  const sel=document.getElementById('sel-date');
+  if(!pair){sel.innerHTML='<option value="">— vyber pár —</option>';document.getElementById('btn-show').disabled=true;return;}
+  const dates=[...new Set(allFiles.filter(f=>f.pair===pair).map(f=>f.dateSort+'|'+f.dateDisplay))].sort().reverse();
+  sel.innerHTML='<option value="">— vyber dátum —</option>'+dates.map(d=>{const[s,dp]=d.split('|');return`<option value="${s}|${dp}">${dp}</option>`;}).join('');
+  document.getElementById('btn-show').disabled=true;
+}
+
+function onDateChange(){
+  document.getElementById('btn-show').disabled=!document.getElementById('sel-date').value;
+}
+
+async function showChart(){
+  const pair=document.getElementById('sel-pair').value;
+  const dateVal=document.getElementById('sel-date').value;
+  if(!pair||!dateVal)return;
+  const[dateSort,dateDisplay]=dateVal.split('|');
+  const files=allFiles.filter(f=>f.pair===pair&&f.dateSort===dateSort);
+  if(!files.length){showToast('Žiadne súbory','error');return;}
+  const btn=document.getElementById('btn-show');
+  btn.textContent='...';btn.disabled=true;
+  try{
+    const series=[];
+    for(const f of files){
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
+      const text=await r.text();
+      series.push({name:f.name.replace(/\.csv$/i,''),points:parseCSV(text)});
     }
-
-    renderPairs();
-    const total = Object.values(index).reduce((s, dates) => s + Object.values(dates).reduce((ss, files) => ss + files.length, 0), 0);
-    showToast(`${total} súborov, ${Object.keys(index).length} párov ✓`, 'success');
-    if (unrecognized > 0) showToast(`${unrecognized} súborov s neznámym názvom preskočených`, '');
-
-  } catch(e) {
-    document.getElementById('pair-pills').innerHTML = `<span style="color:var(--red);font-family:var(--font-mono);font-size:11px">Chyba: ${e.message}</span>`;
-  }
-}
-
-// ── RENDER PAIRS ──
-function renderPairs() {
-  const pairs = Object.keys(index).sort();
-  if (!pairs.length) {
-    document.getElementById('pair-pills').innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">Žiadne CSV súbory</span>';
-    return;
-  }
-  document.getElementById('pair-pills').innerHTML = pairs.map(p =>
-    `<div class="pill ${p === selectedPair ? 'active' : ''}" onclick="selectPair('${p.replace(/'/g, "\\'")}')">${p}</div>`
-  ).join('');
-}
-
-// ── SELECT PAIR ──
-function selectPair(pair) {
-  selectedPair = pair;
-  selectedDate = null;
-  hideAnalysis();
-  renderPairs();
-  renderDates();
-}
-
-// ── RENDER DATES ──
-function renderDates() {
-  if (!selectedPair || !index[selectedPair]) {
-    document.getElementById('date-pills').innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">— vyber pár</span>';
-    document.getElementById('btn-analyze').style.display = 'none';
-    return;
-  }
-  const dates = Object.keys(index[selectedPair]).sort((a, b) => normalizeDate(a).localeCompare(normalizeDate(b)));
-  document.getElementById('date-pills').innerHTML = dates.map(d =>
-    `<div class="pill date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectDate('${d}')">${d}</div>`
-  ).join('');
-}
-
-// ── SELECT DATE ──
-function selectDate(date) {
-  selectedDate = date;
-  renderDates();
-  document.getElementById('btn-analyze').style.display = 'block';
-}
-
-// ── ANALYZE ──
-async function analyze() {
-  if (!selectedPair || !selectedDate) return;
-  const files = index[selectedPair][selectedDate];
-  if (!files || !files.length) { showToast('Žiadne súbory pre tento deň', 'error'); return; }
-
-  const btn = document.getElementById('btn-analyze');
-  btn.textContent = '...'; btn.disabled = true;
-
-  try {
-    const series = [];
-    for (const f of files) {
-      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`, {
-        headers: { Authorization: 'Bearer ' + accessToken }
-      });
-      const text = await r.text();
-      series.push({ name: f.name.replace(/\.csv$/i, ''), points: parseCSV(text) });
-    }
-    // Sort series by name for consistency
-    series.sort((a, b) => a.name.localeCompare(b.name));
-
     renderStats(series);
-    renderChart(series);
-    renderCorr(series);
-    showToast(`${series.length} sérií načítaných ✓`, 'success');
-  } catch(e) {
-    showToast('Chyba: ' + e.message, 'error');
-  }
-
-  btn.textContent = 'Analyzovať'; btn.disabled = false;
+    renderChart(series,pair,dateDisplay);
+    if(series.length===2)renderCorr(series);
+    document.getElementById('empty-state').style.display='none';
+    showToast('Graf načítaný ✓','success');
+  }catch(e){showToast('Chyba: '+e.message,'error');}
+  btn.textContent='Zobraziť graf';btn.disabled=false;
 }
 
-// ── PARSE CSV ──
-function parseCSV(text) {
-  const rows = text.trim().split(/\r?\n/);
-  const points = [];
-  for (const row of rows) {
-    // Try semicolon, then comma
-    const sep = row.includes(';') ? ';' : ',';
-    const parts = row.split(sep);
-    if (parts.length < 2) continue;
-    let dt, val;
-    if (parts.length >= 3) {
-      dt = parts[0].trim() + ' ' + parts[1].trim();
-      val = parseFloat(parts[2].replace(',', '.'));
-    } else {
-      dt = parts[0].trim();
-      val = parseFloat(parts[1].replace(',', '.'));
-    }
-    if (!isNaN(val)) points.push({ x: dt, y: val });
+function parseCSV(text){
+  const rows=text.trim().split(/\r?\n/),points=[];
+  for(const row of rows){
+    const p=row.split(';');
+    if(p.length<3)continue;
+    const val=parseFloat(p[2].replace(',','.'));
+    if(!isNaN(val))points.push({x:p[1].trim(),y:val});
   }
   return points;
 }
 
-// ── STATS ──
-function renderStats(series) {
-  document.getElementById('stats-row').style.display = 'grid';
-  document.getElementById('stats-row').innerHTML = series.map((s, i) => {
-    const vals = s.points.map(p => p.y);
-    if (!vals.length) return '';
-    const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
-    const std = Math.sqrt(vals.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/vals.length);
-    const sharpe = std > 0 ? (mean/std).toFixed(3) : '—';
-    const cls = mean >= 0 ? 'pos' : 'neg';
-    return `<div class="stat-card">
+function renderStats(series){
+  const row=document.getElementById('stats-row');
+  row.style.display='grid';
+  row.innerHTML=series.map((s,i)=>{
+    const vals=s.points.map(p=>p.y);
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const std=Math.sqrt(vals.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/vals.length);
+    const sharpe=std>0?(mean/std).toFixed(3):'—';
+    return`<div class="stat-card">
       <div class="stat-label" style="color:${COLORS[i%COLORS.length]}">${s.name}</div>
-      <div class="stat-value ${cls}">${mean.toFixed(2)}</div>
+      <div class="stat-value ${mean>=0?'pos':'neg'}">${mean.toFixed(2)}</div>
       <div class="stat-sub">mean · σ ${std.toFixed(2)}</div>
       <div class="stat-sub">min ${Math.min(...vals).toFixed(2)} · max ${Math.max(...vals).toFixed(2)}</div>
-      <div class="stat-sub">sharpe ${sharpe} · n ${vals.length}</div>
+      <div class="stat-sub">sharpe ${sharpe}</div>
     </div>`;
   }).join('');
 }
 
-// ── CHART ──
-function renderChart(series) {
-  document.getElementById('chart-card').style.display = 'block';
-  document.getElementById('chart-title').textContent = `${selectedPair} — ${selectedDate}`;
-  document.getElementById('chart-legend').innerHTML = series.map((s,i) =>
+function renderChart(series,pair,dateDisplay){
+  document.getElementById('chart-card').style.display='block';
+  document.getElementById('chart-title').textContent=`${pair} — ${dateDisplay}`;
+  document.getElementById('chart-legend').innerHTML=series.map((s,i)=>
     `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>${s.name}</div>`
   ).join('');
-
-  // Merge all timestamps, align by index
-  const labels = series[0].points.map(p => p.x);
-  const datasets = series.map((s, i) => ({
-    label: s.name,
-    data: s.points.map(p => p.y),
-    borderColor: COLORS[i % COLORS.length],
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    pointRadius: 0,
-    tension: 0,
-  }));
-
-  if (chartInstance) chartInstance.destroy();
-  chartInstance = new Chart(document.getElementById('main-chart').getContext('2d'), {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      animation: { duration: 300 },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#181c23', borderColor: '#2a3140', borderWidth: 1,
-          titleColor: '#6b7a8d', bodyColor: '#c8d0dc',
-          titleFont: { family: 'IBM Plex Mono', size: 10 },
-          bodyFont: { family: 'IBM Plex Mono', size: 11 },
-          padding: 10,
-        }
+  if(chartInstance)chartInstance.destroy();
+  chartInstance=new Chart(document.getElementById('main-chart').getContext('2d'),{
+    type:'line',
+    data:{
+      labels:series[0].points.map(p=>p.x),
+      datasets:series.map((s,i)=>({
+        label:s.name,data:s.points.map(p=>p.y),
+        borderColor:COLORS[i%COLORS.length],backgroundColor:'transparent',
+        borderWidth:1.5,pointRadius:0,tension:0,
+      }))
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:300},
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#181c23',borderColor:'#2a3140',borderWidth:1,
+          titleColor:'#6b7a8d',bodyColor:'#c8d0dc',
+          titleFont:{family:'IBM Plex Mono',size:10},bodyFont:{family:'IBM Plex Mono',size:11},padding:10}
       },
-      scales: {
-        x: {
-          ticks: { color: '#3d4a58', font: { family: 'IBM Plex Mono', size: 10 }, maxTicksLimit: 10, maxRotation: 45 },
-          grid: { color: '#1e2530' }
-        },
-        y: {
-          ticks: { color: '#3d4a58', font: { family: 'IBM Plex Mono', size: 10 } },
-          grid: { color: '#1e2530' }
-        }
+      scales:{
+        x:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:10},maxTicksLimit:16,maxRotation:45},grid:{color:'#1e2530'}},
+        y:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:10}},grid:{color:'#1e2530'}}
       }
     }
   });
 }
 
-// ── CORRELATION ──
-function renderCorr(series) {
-  if (series.length < 2) { document.getElementById('corr-card').style.display = 'none'; return; }
-  document.getElementById('corr-card').style.display = 'block';
-
-  function pearson(a, b) {
-    const n = Math.min(a.length, b.length);
-    const ma = a.slice(0,n).reduce((s,v)=>s+v,0)/n;
-    const mb = b.slice(0,n).reduce((s,v)=>s+v,0)/n;
-    let num=0,da=0,db=0;
-    for(let i=0;i<n;i++){const ea=a[i]-ma,eb=b[i]-mb;num+=ea*eb;da+=ea*ea;db+=eb*eb;}
-    return da&&db?num/Math.sqrt(da*db):0;
-  }
-
-  const vals = series.map(s => s.points.map(p => p.y));
-  const names = series.map(s => s.name);
-
-  let html = `<table class="corr-table"><thead><tr><th></th>${names.map(n=>`<th>${n}</th>`).join('')}</tr></thead><tbody>`;
-  names.forEach((r, ri) => {
-    html += `<tr><td>${r}</td>`;
-    names.forEach((c, ci) => {
-      if (ri === ci) { html += `<td class="corr-self">1.0000</td>`; return; }
-      const v = pearson(vals[ri], vals[ci]);
-      const cls = v > 0.7 ? 'corr-pos' : v < -0.7 ? 'corr-neg' : 'corr-neu';
-      html += `<td class="${cls}">${v.toFixed(4)}</td>`;
-    });
-    html += `</tr>`;
-  });
-  html += `</tbody></table>`;
-  document.getElementById('corr-wrap').innerHTML = html;
+function renderCorr(series){
+  const a=series[0].points.map(p=>p.y),b=series[1].points.map(p=>p.y);
+  const n=Math.min(a.length,b.length);
+  const ma=a.slice(0,n).reduce((s,v)=>s+v,0)/n,mb=b.slice(0,n).reduce((s,v)=>s+v,0)/n;
+  let num=0,da=0,db=0;
+  for(let i=0;i<n;i++){const ea=a[i]-ma,eb=b[i]-mb;num+=ea*eb;da+=ea*ea;db+=eb*eb;}
+  const corr=da&&db?num/Math.sqrt(da*db):0;
+  document.getElementById('corr-card').style.display='block';
+  const cls=corr>0.7?'pos':corr<-0.7?'neg':'';
+  document.getElementById('corr-value').className='corr-big '+cls;
+  document.getElementById('corr-value').textContent=corr.toFixed(4);
+  document.getElementById('corr-desc').textContent=
+    corr>0.7?'Silná pozitívna korelácia':corr<-0.7?'Silná negatívna korelácia':'Slabá alebo žiadna korelácia';
 }
 
-function hideAnalysis() {
-  document.getElementById('stats-row').style.display = 'none';
-  document.getElementById('chart-card').style.display = 'none';
-  document.getElementById('corr-card').style.display = 'none';
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-}
-
-// ── TOAST ──
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
-  setTimeout(() => t.className = 'toast', 3000);
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>{t.className='toast';},3000);
 }
 
 loadConfig();
