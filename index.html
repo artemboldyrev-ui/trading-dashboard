@@ -6,702 +6,175 @@
 <title>Trading Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
-
-  :root {
-    --bg: #0a0c0f;
-    --bg2: #111318;
-    --bg3: #181c23;
-    --border: #1e2530;
-    --border2: #2a3140;
-    --text: #c8d0dc;
-    --text2: #6b7a8d;
-    --text3: #3d4a58;
-    --accent: #00d4aa;
-    --accent2: #0099ff;
-    --red: #ff4d6a;
-    --yellow: #f5c842;
-    --green: #00d4aa;
-    --font-mono: 'IBM Plex Mono', monospace;
-    --font: 'IBM Plex Sans', sans-serif;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── TOP BAR ── */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    height: 56px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .logo span { color: var(--text2); font-weight: 300; }
-
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-
-  .folder-badge {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text2);
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    padding: 4px 10px;
-    border-radius: 3px;
-    display: none;
-  }
-
-  .btn {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 7px 16px;
-    border-radius: 3px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-  }
-  .btn-primary:hover { background: #00f0c0; }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--text2);
-    border: 1px solid var(--border2);
-  }
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-  .btn-danger {
-    background: transparent;
-    color: var(--red);
-    border: 1px solid rgba(255,77,106,0.3);
-    font-size: 10px;
-    padding: 5px 10px;
-  }
-  .btn-danger:hover { background: rgba(255,77,106,0.1); }
-
-  /* ── MAIN LAYOUT ── */
-  .main { padding: 28px 32px; max-width: 1600px; margin: 0 auto; }
-
-  /* ── AUTH SCREEN ── */
-  #auth-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: calc(100vh - 56px);
-    gap: 0;
-  }
-
-  .auth-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 48px 56px;
-    max-width: 480px;
-    width: 100%;
-    text-align: center;
-  }
-
-  .auth-icon {
-    font-size: 40px;
-    margin-bottom: 24px;
-    filter: grayscale(0.3);
-  }
-
-  .auth-card h2 {
-    font-family: var(--font-mono);
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text);
-    margin-bottom: 12px;
-  }
-
-  .auth-card p {
-    font-size: 13px;
-    color: var(--text2);
-    line-height: 1.6;
-    margin-bottom: 32px;
-  }
-
-  .auth-config {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 24px;
-    text-align: left;
-  }
-
-  .config-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 4px;
-  }
-
-  .config-input {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 3px;
-    padding: 10px 14px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text);
-    width: 100%;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .config-input:focus { border-color: var(--accent); }
-  .config-input::placeholder { color: var(--text3); }
-
-  .auth-note {
-    font-size: 11px;
-    color: var(--text3);
-    line-height: 1.5;
-    margin-top: 16px;
-  }
-
-  .auth-note a { color: var(--accent2); text-decoration: none; }
-  .auth-note a:hover { text-decoration: underline; }
-
-  /* ── SETUP GUIDE ── */
-  .setup-guide {
-    margin-top: 48px;
-    max-width: 480px;
-    width: 100%;
-  }
-
-  .setup-title {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text3);
-    margin-bottom: 16px;
-  }
-
-  .step {
-    display: flex;
-    gap: 16px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .step:last-child { border-bottom: none; }
-
-  .step-num {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--accent);
-    font-weight: 600;
-    min-width: 20px;
-    padding-top: 1px;
-  }
-
-  .step-content { flex: 1; }
-
-  .step-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .step-desc {
-    font-size: 11px;
-    color: var(--text2);
-    line-height: 1.5;
-  }
-
-  .step-desc a { color: var(--accent2); text-decoration: none; }
-  .step-desc a:hover { text-decoration: underline; }
-
-  .code-inline {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    padding: 1px 6px;
-    border-radius: 2px;
-    color: var(--yellow);
-  }
-
-  /* ── DASHBOARD ── */
-  #dashboard { display: none; }
-
-  .dash-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-  }
-
-  .dash-title {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .dash-title strong {
-    display: block;
-    font-size: 18px;
-    color: var(--text);
-    font-family: var(--font);
-    font-weight: 300;
-    letter-spacing: 0;
-    text-transform: none;
-    margin-top: 4px;
-  }
-
-  .dash-actions { display: flex; gap: 10px; align-items: center; }
-
-  /* ── FILE PICKER ── */
-  .file-section {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .section-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text3);
-  }
-
-  .file-list { display: flex; flex-direction: column; gap: 6px; }
-
-  .file-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-  }
-  .file-item:hover { border-color: var(--border2); }
-  .file-item.selected { border-color: var(--accent); background: rgba(0,212,170,0.05); }
-
-  .file-check {
-    width: 16px;
-    height: 16px;
-    border: 1px solid var(--border2);
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    flex-shrink: 0;
-    transition: all 0.15s;
-  }
-  .file-item.selected .file-check {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #000;
-  }
-
-  .file-name {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text);
-    flex: 1;
-  }
-
-  .file-meta {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text3);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 32px;
-    color: var(--text3);
-    font-size: 12px;
-    font-family: var(--font-mono);
-  }
-
-  /* ── STATS ROW ── */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-
-  .stat-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 16px 20px;
-  }
-
-  .stat-label {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text3);
-    margin-bottom: 8px;
-  }
-
-  .stat-value {
-    font-family: var(--font-mono);
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .stat-value.pos { color: var(--green); }
-  .stat-value.neg { color: var(--red); }
-
-  .stat-sub {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text3);
-    margin-top: 4px;
-  }
-
-  /* ── CHART ── */
-  .chart-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
-
-  .chart-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-
-  .chart-title {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text2);
-  }
-
-  .chart-legend {
-    display: flex;
-    gap: 16px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text2);
-  }
-
-  .legend-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  .chart-wrap { position: relative; height: 340px; }
-
-  /* ── CORR TABLE ── */
-  .corr-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 24px;
-    margin-bottom: 24px;
-  }
-
-  .corr-table { width: 100%; border-collapse: collapse; }
-
-  .corr-table th {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text3);
-    padding: 8px 12px;
-    text-align: right;
-    font-weight: 400;
-    border-bottom: 1px solid var(--border);
-  }
-  .corr-table th:first-child { text-align: left; }
-
-  .corr-table td {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    padding: 8px 12px;
-    text-align: right;
-    border-bottom: 1px solid var(--border);
-  }
-  .corr-table td:first-child {
-    text-align: left;
-    color: var(--text2);
-    font-size: 11px;
-  }
-
-  .corr-pos-strong { color: var(--green); font-weight: 500; }
-  .corr-neg-strong { color: var(--red); font-weight: 500; }
-  .corr-neutral { color: var(--text2); }
-  .corr-self { color: var(--text3); }
-
-  /* ── LOADING ── */
-  .loading {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text3);
-    padding: 16px 0;
-  }
-
-  .spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--border2);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── TOAST ── */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: 4px;
-    padding: 12px 18px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text);
-    z-index: 9999;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.2s;
-    pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.error { border-color: rgba(255,77,106,0.4); color: var(--red); }
-  .toast.success { border-color: rgba(0,212,170,0.4); color: var(--accent); }
-
-  select.config-input { appearance: none; cursor: pointer; }
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0a0c0f;
+  --bg2: #111318;
+  --bg3: #181c23;
+  --border: #1e2530;
+  --border2: #2a3140;
+  --text: #c8d0dc;
+  --text2: #6b7a8d;
+  --text3: #3d4a58;
+  --accent: #00d4aa;
+  --accent2: #0099ff;
+  --red: #ff4d6a;
+  --yellow: #f5c842;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font: 'IBM Plex Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; }
+.logo span { color: var(--text3); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.btn { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 14px; border-radius: 3px; border: none; cursor: pointer; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #00f0c0; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(255,77,106,0.3); font-size: 10px; }
+.btn-danger:hover { background: rgba(255,77,106,0.08); }
+
+/* AUTH */
+#auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 52px); gap: 0; padding: 40px 20px; }
+.auth-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 44px 52px; max-width: 460px; width: 100%; text-align: center; }
+.auth-icon { font-size: 36px; margin-bottom: 20px; }
+.auth-card h2 { font-family: var(--font-mono); font-size: 14px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); margin-bottom: 10px; }
+.auth-card p { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 28px; }
+.config-label { font-family: var(--font-mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.config-input { background: var(--bg3); border: 1px solid var(--border2); border-radius: 3px; padding: 9px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text); width: 100%; outline: none; transition: border-color 0.15s; margin-bottom: 12px; }
+.config-input:focus { border-color: var(--accent); }
+.config-input::placeholder { color: var(--text3); }
+.auth-note { font-size: 10px; color: var(--text3); margin-top: 14px; line-height: 1.5; }
+.auth-note a { color: var(--accent2); text-decoration: none; }
+
+/* MAIN */
+.main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+#dashboard { display: none; }
+
+/* SELECTOR BAR */
+.selector-bar {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 16px 20px; margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.sel-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); white-space: nowrap; }
+.sel-group { display: flex; flex-direction: column; gap: 4px; }
+.sel-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 5px 12px; border-radius: 3px; cursor: pointer;
+  border: 1px solid var(--border2); color: var(--text2);
+  background: var(--bg3); transition: all 0.15s; white-space: nowrap;
+}
+.pill:hover { border-color: var(--text2); color: var(--text); }
+.pill.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,170,0.08); }
+.pill.date-pill { font-size: 10px; }
+
+.sel-divider { width: 1px; height: 36px; background: var(--border); margin: 0 4px; }
+.sel-spacer { flex: 1; }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; }
+.stat-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 6px; }
+.stat-value { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
+.stat-value.pos { color: var(--accent); }
+.stat-value.neg { color: var(--red); }
+.stat-sub { font-family: var(--font-mono); font-size: 9px; color: var(--text3); margin-top: 3px; }
+
+/* CHART */
+.chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 22px; margin-bottom: 20px; }
+.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.chart-title { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); }
+.chart-legend { display: flex; gap: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--text2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+.chart-wrap { position: relative; height: 360px; }
+
+/* CORR */
+.corr-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 22px; margin-bottom: 20px; }
+.section-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 14px; }
+.corr-table { width: 100%; border-collapse: collapse; }
+.corr-table th { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 7px 12px; border-bottom: 1px solid var(--border); font-weight: 400; text-align: right; }
+.corr-table th:first-child { text-align: left; }
+.corr-table td { font-family: var(--font-mono); font-size: 12px; padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: right; }
+.corr-table td:first-child { text-align: left; color: var(--text2); font-size: 11px; }
+.corr-pos { color: var(--accent); font-weight: 500; }
+.corr-neg { color: var(--red); font-weight: 500; }
+.corr-neu { color: var(--text2); }
+.corr-self { color: var(--text3); }
+
+/* EMPTY / LOADING */
+.empty { text-align: center; padding: 48px; color: var(--text3); font-family: var(--font-mono); font-size: 11px; line-height: 2; }
+.loading-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
+.spinner { width: 12px; height: 12px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOAST */
+.toast { position: fixed; bottom: 20px; right: 20px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 4px; padding: 10px 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text); z-index: 9999; opacity: 0; transform: translateY(6px); transition: all 0.2s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { border-color: rgba(255,77,106,0.4); color: var(--red); }
+.toast.success { border-color: rgba(0,212,170,0.4); color: var(--accent); }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
   <div class="logo">Trading<span>/</span>Dashboard</div>
   <div class="topbar-right">
-    <div class="folder-badge" id="folder-badge">📁 —</div>
-    <button class="btn btn-ghost" id="btn-refresh" onclick="refreshFiles()" style="display:none">↻ Refresh</button>
+    <span id="folder-badge" style="font-family:var(--font-mono);font-size:10px;color:var(--text3);display:none"></span>
+    <button class="btn btn-ghost" id="btn-refresh" onclick="loadAndIndex()" style="display:none">↻ Refresh</button>
     <button class="btn btn-danger" id="btn-logout" onclick="logout()" style="display:none">Odhlásiť</button>
     <button class="btn btn-primary" id="btn-login" onclick="startAuth()">Pripojiť Google Drive</button>
   </div>
 </div>
 
-<!-- AUTH SCREEN -->
-<div id="auth-screen" class="main">
+<!-- AUTH -->
+<div id="auth-screen">
   <div class="auth-card">
     <div class="auth-icon">📊</div>
     <h2>Trading Dashboard</h2>
-    <p>Pripoj Google Drive, vyber CSV súbory z priečinka Trading sheets a grafy sa vygenerujú automaticky.</p>
-
-    <div class="auth-config">
-      <div>
-        <div class="config-label">Google Client ID</div>
-        <input class="config-input" id="client-id-input" type="text"
-          placeholder="xxxx.apps.googleusercontent.com"
-          oninput="saveConfig()">
-      </div>
-      <div>
-        <div class="config-label">ID priečinka na Drive (voliteľné)</div>
-        <input class="config-input" id="folder-id-input" type="text"
-          placeholder="1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59"
-          oninput="saveConfig()">
-      </div>
+    <p>Pripoj Google Drive, vyber pár a dátum — graf sa vygeneruje automaticky.</p>
+    <div>
+      <div class="config-label">Google Client ID</div>
+      <input class="config-input" id="client-id-input" placeholder="xxxx.apps.googleusercontent.com" oninput="saveConfig()">
+      <div class="config-label">ID priečinka Trading sheets</div>
+      <input class="config-input" id="folder-id-input" placeholder="1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59" oninput="saveConfig()">
     </div>
-
-    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="startAuth()">
-      Pripojiť cez Google
-    </button>
-
-    <p class="auth-note">
-      Appka beží len v tvojom prehliadači. Dáta sa nikam neposielajú.<br>
-      Potrebuješ <a href="#setup-guide">Client ID</a> z Google Cloud Console — návod nižšie.
-    </p>
-  </div>
-
-  <!-- SETUP GUIDE -->
-  <div class="setup-guide" id="setup-guide">
-    <div class="setup-title">── Návod na nastavenie (1× stačí) ──</div>
-
-    <div class="step">
-      <div class="step-num">01</div>
-      <div class="step-content">
-        <div class="step-title">Otvor Google Cloud Console</div>
-        <div class="step-desc">
-          Choď na <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>
-          a prihlás sa svojím Google účtom.
-        </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">02</div>
-      <div class="step-content">
-        <div class="step-title">Vytvor nový projekt</div>
-        <div class="step-desc">
-          Hore vľavo klikni na selector projektov → <span class="code-inline">New Project</span> →
-          pomenuj ho napr. <span class="code-inline">trading-dashboard</span> → Create.
-        </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">03</div>
-      <div class="step-content">
-        <div class="step-title">Aktivuj Google Drive API</div>
-        <div class="step-desc">
-          V ľavom menu: <span class="code-inline">APIs & Services</span> →
-          <span class="code-inline">Enable APIs</span> → vyhľadaj
-          <span class="code-inline">Google Drive API</span> → Enable.
-        </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">04</div>
-      <div class="step-content">
-        <div class="step-title">Vytvor OAuth 2.0 Client ID</div>
-        <div class="step-desc">
-          <span class="code-inline">APIs & Services</span> → <span class="code-inline">Credentials</span>
-          → <span class="code-inline">Create Credentials</span> → <span class="code-inline">OAuth Client ID</span>
-          → Application type: <span class="code-inline">Web application</span>.<br><br>
-          Do poľa <strong>Authorized JavaScript origins</strong> pridaj URL tejto stránky
-          (napr. <span class="code-inline">file://</span> ak ju otváraš lokálne, alebo tvoju doménu).
-        </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">05</div>
-      <div class="step-content">
-        <div class="step-title">Skopíruj Client ID</div>
-        <div class="step-desc">
-          Po vytvorení uvidíš <span class="code-inline">Client ID</span> —
-          skopíruj ho a vlož do poľa vyššie.
-        </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">06</div>
-      <div class="step-content">
-        <div class="step-title">Nastav OAuth consent screen</div>
-        <div class="step-desc">
-          <span class="code-inline">OAuth consent screen</span> → User Type:
-          <span class="code-inline">External</span> → vyplň názov appky →
-          v sekcii Scopes pridaj <span class="code-inline">drive.readonly</span> →
-          v Test users pridaj svoj email.
-        </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">07</div>
-      <div class="step-content">
-        <div class="step-title">ID priečinka Trading sheets</div>
-        <div class="step-desc">
-          Otvor priečinok v Drive, z URL skopíruj ID:
-          <span class="code-inline">drive.google.com/drive/folders/<strong>TOTO_JE_ID</strong></span><br>
-          Tvoje: <span class="code-inline">1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59</span>
-        </div>
-      </div>
-    </div>
+    <button class="btn btn-primary" style="width:100%;padding:11px" onclick="startAuth()">Pripojiť cez Google</button>
+    <p class="auth-note">Dáta sa nikam neposielajú. Beží len v tvojom prehliadači.</p>
   </div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard" class="main">
-  <div class="dash-header">
-    <div class="dash-title">
-      Prehľad
-      <strong id="dash-subtitle">Vyber CSV súbory</strong>
-    </div>
-    <div class="dash-actions">
-      <button class="btn btn-ghost" onclick="refreshFiles()">↻ Obnoviť</button>
-      <button class="btn btn-primary" onclick="analyzeSelected()" id="btn-analyze">Analyzovať</button>
-    </div>
-  </div>
 
-  <!-- FILE PICKER -->
-  <div class="file-section">
-    <div class="section-header">
-      <div class="section-label">CSV súbory v Drive</div>
-      <div id="sel-count" style="font-family:var(--font-mono);font-size:10px;color:var(--text3)"></div>
+  <!-- SELECTOR -->
+  <div class="selector-bar" id="selector-bar">
+    <div class="sel-group">
+      <div class="sel-label">Pár</div>
+      <div class="sel-pills" id="pair-pills"><div class="loading-row"><div class="spinner"></div> Načítavam...</div></div>
     </div>
-    <div id="file-list" class="file-list">
-      <div class="loading"><div class="spinner"></div> Načítavam súbory...</div>
+    <div class="sel-divider"></div>
+    <div class="sel-group">
+      <div class="sel-label">Dátum</div>
+      <div class="sel-pills" id="date-pills"><span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">— vyber pár</span></div>
     </div>
+    <div class="sel-spacer"></div>
+    <button class="btn btn-primary" onclick="analyze()" id="btn-analyze" style="display:none">Analyzovať</button>
   </div>
 
   <!-- STATS -->
@@ -710,61 +183,50 @@
   <!-- CHART -->
   <div class="chart-card" id="chart-card" style="display:none">
     <div class="chart-header">
-      <div class="chart-title">Vývoj hodnôt</div>
+      <div class="chart-title" id="chart-title">Vývoj hodnôt</div>
       <div class="chart-legend" id="chart-legend"></div>
     </div>
-    <div class="chart-wrap">
-      <canvas id="main-chart"></canvas>
-    </div>
+    <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
   </div>
 
-  <!-- CORRELATION -->
+  <!-- CORR -->
   <div class="corr-card" id="corr-card" style="display:none">
-    <div class="section-header">
-      <div class="section-label">Korelačná matica</div>
-    </div>
-    <div id="corr-table-wrap"></div>
+    <div class="section-label">Korelačná matica</div>
+    <div id="corr-wrap"></div>
   </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async></script>
-
 <script>
-// ── CONFIG ──
-const COLORS = ['#00d4aa','#0099ff','#f5c842','#ff4d6a','#a78bfa'];
+const COLORS = ['#00d4aa', '#0099ff', '#f5c842', '#ff4d6a', '#a78bfa'];
 let tokenClient, accessToken, chartInstance;
-let driveFiles = [], selectedFiles = [], seriesData = {};
+let index = {}; // { pairName: { dateStr: [fileObj, fileObj] } }
+let selectedPair = null, selectedDate = null;
 
-// ── PERSIST CONFIG ──
+// ── CONFIG ──
 function saveConfig() {
-  localStorage.setItem('td_client_id', document.getElementById('client-id-input').value.trim());
-  localStorage.setItem('td_folder_id', document.getElementById('folder-id-input').value.trim());
+  localStorage.setItem('td_cid', document.getElementById('client-id-input').value.trim());
+  localStorage.setItem('td_fid', document.getElementById('folder-id-input').value.trim());
 }
-
 function loadConfig() {
-  const cid = localStorage.getItem('td_client_id') || '';
-  const fid = localStorage.getItem('td_folder_id') || '1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59';
-  document.getElementById('client-id-input').value = cid;
-  document.getElementById('folder-id-input').value = fid;
+  document.getElementById('client-id-input').value = localStorage.getItem('td_cid') || '';
+  document.getElementById('folder-id-input').value = localStorage.getItem('td_fid') || '1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59';
 }
-
 function getClientId() { return document.getElementById('client-id-input').value.trim(); }
 function getFolderId() { return document.getElementById('folder-id-input').value.trim(); }
 
 // ── AUTH ──
 function startAuth() {
   const cid = getClientId();
-  if (!cid) { showToast('Vlož Client ID z Google Cloud Console', 'error'); return; }
+  if (!cid) { showToast('Vlož Client ID', 'error'); return; }
   saveConfig();
-
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: cid,
     scope: 'https://www.googleapis.com/auth/drive.readonly',
     callback: (resp) => {
-      if (resp.error) { showToast('Chyba prihlásenia: ' + resp.error, 'error'); return; }
+      if (resp.error) { showToast('Chyba: ' + resp.error, 'error'); return; }
       accessToken = resp.access_token;
       onLoggedIn();
     }
@@ -778,13 +240,11 @@ function onLoggedIn() {
   document.getElementById('btn-login').style.display = 'none';
   document.getElementById('btn-logout').style.display = 'block';
   document.getElementById('btn-refresh').style.display = 'block';
-  showToast('Pripojené ✓', 'success');
-  loadDriveFiles();
+  loadAndIndex();
 }
 
 function logout() {
-  accessToken = null;
-  driveFiles = []; selectedFiles = []; seriesData = {};
+  accessToken = null; index = {}; selectedPair = null; selectedDate = null;
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('btn-login').style.display = 'block';
@@ -794,169 +254,211 @@ function logout() {
   hideAnalysis();
 }
 
-// ── DRIVE API ──
+// ── DRIVE ──
 async function driveAPI(url) {
   const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
-  if (!r.ok) {
-    if (r.status === 401) { showToast('Prihlásenie vypršalo — prihlás sa znova', 'error'); logout(); }
-    throw new Error('Drive API: ' + r.status);
-  }
+  if (!r.ok) { if (r.status === 401) logout(); throw new Error('Drive API ' + r.status); }
   return r.json();
 }
 
-async function loadDriveFiles() {
-  const folderId = getFolderId();
-  document.getElementById('file-list').innerHTML =
-    '<div class="loading"><div class="spinner"></div> Načítavam súbory z Drive...</div>';
+// ── PARSE FILENAME ──
+// Expects: "AU<AG 17.3.2026" or "MultiSys7110 17.3.2026"
+// Returns: { pair, date } where date is normalized "17.3.2026"
+function parseFilename(name) {
+  // Remove .csv extension
+  const base = name.replace(/\.csv$/i, '').trim();
+  // Match date pattern: one or more digits, dot, digits, dot, digits at end
+  const m = base.match(/^(.+?)\s+(\d{1,2}\.\d{1,2}\.\d{4})$/);
+  if (m) return { pair: m[1].trim(), date: m[2].trim() };
+  // Try alternative: date in middle or other formats
+  const m2 = base.match(/^(.+?)\s+(\d{1,2}[\.\-]\d{1,2}[\.\-]\d{4})$/);
+  if (m2) return { pair: m2[1].trim(), date: m2[2].replace(/-/g, '.').trim() };
+  return null;
+}
+
+function normalizeDate(d) {
+  // "17.3.2026" → "2026-03-17" for sorting
+  const parts = d.split('.');
+  if (parts.length !== 3) return d;
+  return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+}
+
+function displayDate(d) {
+  // "17.3.2026" → "17.3.2026"
+  return d;
+}
+
+// ── LOAD & INDEX ──
+async function loadAndIndex() {
+  document.getElementById('pair-pills').innerHTML = '<div class="loading-row"><div class="spinner"></div> Načítavam súbory...</div>';
+  document.getElementById('date-pills').innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">— vyber pár</span>';
 
   try {
-    let query = "mimeType='text/csv' or name contains '.csv'";
+    const folderId = getFolderId();
+    let query = "(mimeType='text/csv' or name contains '.csv') and trashed=false";
     if (folderId) query += ` and '${folderId}' in parents`;
-    query += ' and trashed=false';
 
     const data = await driveAPI(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,size,modifiedTime)&pageSize=50`
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)&pageSize=200`
     );
 
-    driveFiles = data.files || [];
-
-    if (folderId) {
-      const folderData = await driveAPI(
-        `https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`
-      ).catch(() => ({ name: folderId }));
-      const badge = document.getElementById('folder-badge');
-      badge.textContent = '📁 ' + folderData.name;
-      badge.style.display = 'block';
+    // Index files
+    index = {};
+    let unrecognized = 0;
+    for (const f of data.files || []) {
+      const parsed = parseFilename(f.name);
+      if (!parsed) { unrecognized++; continue; }
+      if (!index[parsed.pair]) index[parsed.pair] = {};
+      if (!index[parsed.pair][parsed.date]) index[parsed.pair][parsed.date] = [];
+      index[parsed.pair][parsed.date].push(f);
     }
 
-    renderFileList();
+    // Update folder badge
+    if (folderId) {
+      const fd = await driveAPI(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`).catch(() => ({ name: '—' }));
+      const badge = document.getElementById('folder-badge');
+      badge.textContent = '📁 ' + fd.name;
+      badge.style.display = 'inline';
+    }
+
+    renderPairs();
+    const total = Object.values(index).reduce((s, dates) => s + Object.values(dates).reduce((ss, files) => ss + files.length, 0), 0);
+    showToast(`${total} súborov, ${Object.keys(index).length} párov ✓`, 'success');
+    if (unrecognized > 0) showToast(`${unrecognized} súborov s neznámym názvom preskočených`, '');
+
   } catch(e) {
-    document.getElementById('file-list').innerHTML =
-      `<div class="empty-state">Chyba: ${e.message}</div>`;
+    document.getElementById('pair-pills').innerHTML = `<span style="color:var(--red);font-family:var(--font-mono);font-size:11px">Chyba: ${e.message}</span>`;
   }
 }
 
-function refreshFiles() { loadDriveFiles(); }
-
-function renderFileList() {
-  const el = document.getElementById('file-list');
-  if (!driveFiles.length) {
-    el.innerHTML = '<div class="empty-state">Žiadne CSV súbory nenájdené v priečinku</div>';
+// ── RENDER PAIRS ──
+function renderPairs() {
+  const pairs = Object.keys(index).sort();
+  if (!pairs.length) {
+    document.getElementById('pair-pills').innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">Žiadne CSV súbory</span>';
     return;
   }
-  el.innerHTML = driveFiles.map((f, i) => `
-    <div class="file-item ${selectedFiles.includes(f.id) ? 'selected' : ''}"
-         onclick="toggleFile('${f.id}')">
-      <div class="file-check">${selectedFiles.includes(f.id) ? '✓' : ''}</div>
-      <div class="file-name">${f.name}</div>
-      <div class="file-meta">${formatDate(f.modifiedTime)}</div>
-    </div>
-  `).join('');
-  updateSelCount();
+  document.getElementById('pair-pills').innerHTML = pairs.map(p =>
+    `<div class="pill ${p === selectedPair ? 'active' : ''}" onclick="selectPair('${p.replace(/'/g, "\\'")}')">${p}</div>`
+  ).join('');
 }
 
-function toggleFile(id) {
-  const idx = selectedFiles.indexOf(id);
-  if (idx === -1) selectedFiles.push(id);
-  else selectedFiles.splice(idx, 1);
-  renderFileList();
+// ── SELECT PAIR ──
+function selectPair(pair) {
+  selectedPair = pair;
+  selectedDate = null;
+  hideAnalysis();
+  renderPairs();
+  renderDates();
 }
 
-function updateSelCount() {
-  document.getElementById('sel-count').textContent =
-    selectedFiles.length ? `${selectedFiles.length} vybraté` : '';
-}
-
-// ── PARSE CSV ──
-function parseCSV(text, name) {
-  const rows = text.trim().split(/\r?\n/);
-  const points = [];
-  for (const row of rows) {
-    const parts = row.split(';');
-    if (parts.length < 3) continue;
-    const dt = parts[0].trim() + ' ' + parts[1].trim();
-    const val = parseFloat(parts[2].replace(',', '.'));
-    if (!isNaN(val)) points.push({ x: dt, y: val });
+// ── RENDER DATES ──
+function renderDates() {
+  if (!selectedPair || !index[selectedPair]) {
+    document.getElementById('date-pills').innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">— vyber pár</span>';
+    document.getElementById('btn-analyze').style.display = 'none';
+    return;
   }
-  return { name, points };
+  const dates = Object.keys(index[selectedPair]).sort((a, b) => normalizeDate(a).localeCompare(normalizeDate(b)));
+  document.getElementById('date-pills').innerHTML = dates.map(d =>
+    `<div class="pill date-pill ${d === selectedDate ? 'active' : ''}" onclick="selectDate('${d}')">${d}</div>`
+  ).join('');
+}
+
+// ── SELECT DATE ──
+function selectDate(date) {
+  selectedDate = date;
+  renderDates();
+  document.getElementById('btn-analyze').style.display = 'block';
 }
 
 // ── ANALYZE ──
-async function analyzeSelected() {
-  if (!selectedFiles.length) { showToast('Vyber aspoň jeden súbor', 'error'); return; }
+async function analyze() {
+  if (!selectedPair || !selectedDate) return;
+  const files = index[selectedPair][selectedDate];
+  if (!files || !files.length) { showToast('Žiadne súbory pre tento deň', 'error'); return; }
 
   const btn = document.getElementById('btn-analyze');
-  btn.textContent = '...';
-  btn.disabled = true;
-  seriesData = {};
+  btn.textContent = '...'; btn.disabled = true;
 
   try {
-    for (const id of selectedFiles) {
-      const file = driveFiles.find(f => f.id === id);
-      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, {
+    const series = [];
+    for (const f of files) {
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`, {
         headers: { Authorization: 'Bearer ' + accessToken }
       });
       const text = await r.text();
-      const parsed = parseCSV(text, file.name.replace('.csv', ''));
-      seriesData[parsed.name] = parsed.points;
+      series.push({ name: f.name.replace(/\.csv$/i, ''), points: parseCSV(text) });
     }
+    // Sort series by name for consistency
+    series.sort((a, b) => a.name.localeCompare(b.name));
 
-    renderStats();
-    renderChart();
-    renderCorrelation();
-    document.getElementById('dash-subtitle').textContent =
-      Object.keys(seriesData).join(' · ');
-    showToast(`${Object.keys(seriesData).length} sérií načítaných ✓`, 'success');
+    renderStats(series);
+    renderChart(series);
+    renderCorr(series);
+    showToast(`${series.length} sérií načítaných ✓`, 'success');
   } catch(e) {
-    showToast('Chyba načítania: ' + e.message, 'error');
+    showToast('Chyba: ' + e.message, 'error');
   }
 
-  btn.textContent = 'Analyzovať';
-  btn.disabled = false;
+  btn.textContent = 'Analyzovať'; btn.disabled = false;
+}
+
+// ── PARSE CSV ──
+function parseCSV(text) {
+  const rows = text.trim().split(/\r?\n/);
+  const points = [];
+  for (const row of rows) {
+    // Try semicolon, then comma
+    const sep = row.includes(';') ? ';' : ',';
+    const parts = row.split(sep);
+    if (parts.length < 2) continue;
+    let dt, val;
+    if (parts.length >= 3) {
+      dt = parts[0].trim() + ' ' + parts[1].trim();
+      val = parseFloat(parts[2].replace(',', '.'));
+    } else {
+      dt = parts[0].trim();
+      val = parseFloat(parts[1].replace(',', '.'));
+    }
+    if (!isNaN(val)) points.push({ x: dt, y: val });
+  }
+  return points;
 }
 
 // ── STATS ──
-function renderStats() {
-  const names = Object.keys(seriesData);
-  const row = document.getElementById('stats-row');
-  row.style.display = 'grid';
-  row.innerHTML = names.map((name, i) => {
-    const vals = seriesData[name].map(p => p.y);
+function renderStats(series) {
+  document.getElementById('stats-row').style.display = 'grid';
+  document.getElementById('stats-row').innerHTML = series.map((s, i) => {
+    const vals = s.points.map(p => p.y);
+    if (!vals.length) return '';
     const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
     const std = Math.sqrt(vals.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/vals.length);
     const sharpe = std > 0 ? (mean/std).toFixed(3) : '—';
-    const min = Math.min(...vals).toFixed(2);
-    const max = Math.max(...vals).toFixed(2);
-    const posNeg = mean >= 0 ? 'pos' : 'neg';
-    return `
-      <div class="stat-card">
-        <div class="stat-label" style="color:${COLORS[i%COLORS.length]}">${name}</div>
-        <div class="stat-value ${posNeg}">${mean.toFixed(2)}</div>
-        <div class="stat-sub">mean · σ ${std.toFixed(2)}</div>
-        <div class="stat-sub">min ${min} · max ${max}</div>
-        <div class="stat-sub">sharpe ${sharpe}</div>
-      </div>`;
+    const cls = mean >= 0 ? 'pos' : 'neg';
+    return `<div class="stat-card">
+      <div class="stat-label" style="color:${COLORS[i%COLORS.length]}">${s.name}</div>
+      <div class="stat-value ${cls}">${mean.toFixed(2)}</div>
+      <div class="stat-sub">mean · σ ${std.toFixed(2)}</div>
+      <div class="stat-sub">min ${Math.min(...vals).toFixed(2)} · max ${Math.max(...vals).toFixed(2)}</div>
+      <div class="stat-sub">sharpe ${sharpe} · n ${vals.length}</div>
+    </div>`;
   }).join('');
 }
 
 // ── CHART ──
-function renderChart() {
-  const names = Object.keys(seriesData);
+function renderChart(series) {
   document.getElementById('chart-card').style.display = 'block';
+  document.getElementById('chart-title').textContent = `${selectedPair} — ${selectedDate}`;
+  document.getElementById('chart-legend').innerHTML = series.map((s,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>${s.name}</div>`
+  ).join('');
 
-  const legend = document.getElementById('chart-legend');
-  legend.innerHTML = names.map((n,i) => `
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>
-      ${n}
-    </div>`).join('');
-
-  // Use first series labels as X
-  const labels = seriesData[names[0]].map(p => p.x);
-
-  const datasets = names.map((name, i) => ({
-    label: name,
-    data: seriesData[name].map(p => p.y),
+  // Merge all timestamps, align by index
+  const labels = series[0].points.map(p => p.x);
+  const datasets = series.map((s, i) => ({
+    label: s.name,
+    data: s.points.map(p => p.y),
     borderColor: COLORS[i % COLORS.length],
     backgroundColor: 'transparent',
     borderWidth: 1.5,
@@ -965,24 +467,18 @@ function renderChart() {
   }));
 
   if (chartInstance) chartInstance.destroy();
-
-  const ctx = document.getElementById('main-chart').getContext('2d');
-  chartInstance = new Chart(ctx, {
+  chartInstance = new Chart(document.getElementById('main-chart').getContext('2d'), {
     type: 'line',
     data: { labels, datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 400 },
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 300 },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#181c23',
-          borderColor: '#2a3140',
-          borderWidth: 1,
-          titleColor: '#6b7a8d',
-          bodyColor: '#c8d0dc',
+          backgroundColor: '#181c23', borderColor: '#2a3140', borderWidth: 1,
+          titleColor: '#6b7a8d', bodyColor: '#c8d0dc',
           titleFont: { family: 'IBM Plex Mono', size: 10 },
           bodyFont: { family: 'IBM Plex Mono', size: 11 },
           padding: 10,
@@ -990,20 +486,12 @@ function renderChart() {
       },
       scales: {
         x: {
-          ticks: {
-            color: '#3d4a58',
-            font: { family: 'IBM Plex Mono', size: 10 },
-            maxTicksLimit: 12,
-            maxRotation: 45,
-          },
-          grid: { color: '#1e2530' },
+          ticks: { color: '#3d4a58', font: { family: 'IBM Plex Mono', size: 10 }, maxTicksLimit: 10, maxRotation: 45 },
+          grid: { color: '#1e2530' }
         },
         y: {
-          ticks: {
-            color: '#3d4a58',
-            font: { family: 'IBM Plex Mono', size: 10 },
-          },
-          grid: { color: '#1e2530' },
+          ticks: { color: '#3d4a58', font: { family: 'IBM Plex Mono', size: 10 } },
+          grid: { color: '#1e2530' }
         }
       }
     }
@@ -1011,48 +499,35 @@ function renderChart() {
 }
 
 // ── CORRELATION ──
-function renderCorrelation() {
-  const names = Object.keys(seriesData);
-  if (names.length < 2) return;
-
+function renderCorr(series) {
+  if (series.length < 2) { document.getElementById('corr-card').style.display = 'none'; return; }
   document.getElementById('corr-card').style.display = 'block';
 
-  // Pearson
-  function corr(a, b) {
+  function pearson(a, b) {
     const n = Math.min(a.length, b.length);
     const ma = a.slice(0,n).reduce((s,v)=>s+v,0)/n;
     const mb = b.slice(0,n).reduce((s,v)=>s+v,0)/n;
-    let num=0, da=0, db=0;
-    for(let i=0;i<n;i++){
-      const ea=a[i]-ma, eb=b[i]-mb;
-      num+=ea*eb; da+=ea*ea; db+=eb*eb;
-    }
-    return da&&db ? num/Math.sqrt(da*db) : 0;
+    let num=0,da=0,db=0;
+    for(let i=0;i<n;i++){const ea=a[i]-ma,eb=b[i]-mb;num+=ea*eb;da+=ea*ea;db+=eb*eb;}
+    return da&&db?num/Math.sqrt(da*db):0;
   }
 
-  const vals = {};
-  names.forEach(n => { vals[n] = seriesData[n].map(p=>p.y); });
+  const vals = series.map(s => s.points.map(p => p.y));
+  const names = series.map(s => s.name);
 
-  let html = `<table class="corr-table"><thead><tr><th></th>`;
-  names.forEach(n => { html += `<th>${n}</th>`; });
-  html += `</tr></thead><tbody>`;
-
-  names.forEach(r => {
+  let html = `<table class="corr-table"><thead><tr><th></th>${names.map(n=>`<th>${n}</th>`).join('')}</tr></thead><tbody>`;
+  names.forEach((r, ri) => {
     html += `<tr><td>${r}</td>`;
-    names.forEach(c => {
-      if (r === c) {
-        html += `<td class="corr-self">1.0000</td>`;
-      } else {
-        const v = corr(vals[r], vals[c]);
-        const cls = v > 0.7 ? 'corr-pos-strong' : v < -0.7 ? 'corr-neg-strong' : 'corr-neutral';
-        html += `<td class="${cls}">${v.toFixed(4)}</td>`;
-      }
+    names.forEach((c, ci) => {
+      if (ri === ci) { html += `<td class="corr-self">1.0000</td>`; return; }
+      const v = pearson(vals[ri], vals[ci]);
+      const cls = v > 0.7 ? 'corr-pos' : v < -0.7 ? 'corr-neg' : 'corr-neu';
+      html += `<td class="${cls}">${v.toFixed(4)}</td>`;
     });
     html += `</tr>`;
   });
-
   html += `</tbody></table>`;
-  document.getElementById('corr-table-wrap').innerHTML = html;
+  document.getElementById('corr-wrap').innerHTML = html;
 }
 
 function hideAnalysis() {
@@ -1062,21 +537,13 @@ function hideAnalysis() {
   if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 }
 
-// ── UTILS ──
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleDateString('sk-SK', { day:'2-digit', month:'2-digit', year:'2-digit' });
-}
-
+// ── TOAST ──
 function showToast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (type ? ' ' + type : '');
-  setTimeout(() => { t.className = 'toast'; }, 3000);
+  t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
+  setTimeout(() => t.className = 'toast', 3000);
 }
 
-// ── INIT ──
 loadConfig();
 </script>
 </body>
