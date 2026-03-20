@@ -195,7 +195,7 @@ function parseFilename(name){
   const dateRaw=m[1];
   const fullName=base.slice(0,base.lastIndexOf(dateRaw)).trim();
   if(!fullName)return null;
-  const basePair=fullName.replace(/[<>]/g,'').trim();
+  const basePair=fullName.replace(/[<>]/g,'/').trim();
   const pts=dateRaw.split('.');
   const d=pts[0].padStart(2,'0'),mo=pts[1].padStart(2,'0');
   let y=pts[2];if(y.length===2)y='20'+y;
@@ -232,7 +232,7 @@ function buildPairSelector(){
   const pairs=Object.keys(pairMap).sort();
   const sel=document.getElementById('sel-pair');
   sel.innerHTML='<option value="">— vyber pár —</option>'+
-    pairs.map(bp=>`<option value="${bp}">${pairMap[bp]}</option>`).join('');
+    pairs.map(bp=>`<option value="${bp}">${bp}</option>`).join('');
   document.getElementById('sel-date').innerHTML='<option value="">— vyber pár —</option>';
   document.getElementById('btn-show').disabled=true;
 }
