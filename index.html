@@ -26,7 +26,6 @@
   .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(255,77,106,.3);font-size:10px;padding:5px 10px}
   .btn:disabled{opacity:.4;cursor:not-allowed}
   .main{padding:28px 32px;max-width:1400px;margin:0 auto}
-  /* AUTH */
   #auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 56px)}
   .auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:48px 56px;max-width:480px;width:100%;text-align:center}
   .auth-icon{font-size:40px;margin-bottom:24px}
@@ -37,12 +36,11 @@
   .config-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:10px 14px;font-family:var(--font-mono);font-size:12px;color:var(--text);width:100%;outline:none;transition:border-color .15s}
   .config-input:focus{border-color:var(--accent)}
   .config-input::placeholder{color:var(--text3)}
-  /* DASHBOARD */
   #dashboard{display:none}
   .selector-bar{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
   .selector-group{display:flex;flex-direction:column;gap:6px}
   .selector-label{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
-  .selector-select{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 14px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none;cursor:pointer;min-width:200px;appearance:none;transition:border-color .15s}
+  .selector-select{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 14px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none;cursor:pointer;min-width:180px;appearance:none;transition:border-color .15s}
   .selector-select:focus{border-color:var(--accent)}
   .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
   .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px 20px}
@@ -51,11 +49,11 @@
   .pos{color:var(--accent)}.neg{color:var(--red)}
   .stat-sub{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:4px}
   .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;margin-bottom:20px}
-  .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
   .chart-title{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2)}
-  .chart-legend{display:flex;gap:16px}
+  .chart-legend{display:flex;gap:16px;flex-wrap:wrap}
   .legend-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--text2)}
-  .legend-dot{width:8px;height:8px;border-radius:50%}
+  .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
   .chart-wrap{position:relative;height:400px}
   .corr-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:24px;margin-bottom:20px}
   .section-label{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:12px}
@@ -91,8 +89,8 @@
         <input class="config-input" id="client-id-input" type="text" placeholder="xxxx.apps.googleusercontent.com" oninput="saveConfig()">
       </div>
       <div>
-        <div class="config-label">ID priečinka Trading sheets</div>
-        <input class="config-input" id="folder-id-input" type="text" placeholder="1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59" oninput="saveConfig()">
+        <div class="config-label">ID priečinka Trading Sheets</div>
+        <input class="config-input" id="folder-id-input" type="text" placeholder="ID priečinka z Drive URL" oninput="saveConfig()">
       </div>
     </div>
     <button class="btn btn-primary" style="width:100%;padding:12px" onclick="startAuth()">Pripojiť cez Google</button>
@@ -130,27 +128,28 @@
   </div>
   <div id="empty-state" class="empty-state">
     Vyber pár a dátum vyššie.<br>
-    Pomenuj súbory: <strong>NázovPáru DD.MM.YYYY.csv</strong><br>
-    Príklad: <strong>AU&lt;AG 17.3.2026.csv</strong> a <strong>AU&gt;AG 17.3.2026.csv</strong>
+    Formát súborov: <strong>EUR&lt;GBP 17.3.2026.csv</strong> + <strong>EUR&gt;GBP 17.3.2026.csv</strong>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script>
-const COLORS=['#00d4aa','#0099ff'];
+const COLORS=['#00d4aa','#0099ff','#f5c842','#ff4d6a'];
 let tokenClient,accessToken,chartInstance,allFiles=[];
 
+// ── CONFIG ──
 function saveConfig(){
   localStorage.setItem('td_cid',document.getElementById('client-id-input').value.trim());
   localStorage.setItem('td_fid',document.getElementById('folder-id-input').value.trim());
 }
 function loadConfig(){
   document.getElementById('client-id-input').value=localStorage.getItem('td_cid')||'';
-  document.getElementById('folder-id-input').value=localStorage.getItem('td_fid')||'1Ctt29HK0Zw0e6QqvFyG31OH-gISIzD59';
+  document.getElementById('folder-id-input').value=localStorage.getItem('td_fid')||'';
 }
 function getFolderId(){return document.getElementById('folder-id-input').value.trim();}
 
+// ── AUTH ──
 function startAuth(){
   const cid=document.getElementById('client-id-input').value.trim();
   if(!cid){showToast('Vlož Client ID','error');return;}
@@ -166,7 +165,6 @@ function startAuth(){
   });
   tokenClient.requestAccessToken();
 }
-
 function onLoggedIn(){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('dashboard').style.display='block';
@@ -176,7 +174,6 @@ function onLoggedIn(){
   showToast('Pripojené ✓','success');
   loadAndParse();
 }
-
 function logout(){
   accessToken=null;allFiles=[];
   document.getElementById('auth-screen').style.display='flex';
@@ -187,30 +184,37 @@ function logout(){
   document.getElementById('folder-badge').style.display='none';
 }
 
+// ── DRIVE ──
 async function driveAPI(url){
   const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
   if(!r.ok){if(r.status===401)logout();throw new Error('API '+r.status);}
   return r.json();
 }
 
+// ── PARSE FILENAME ──
+// "EUR<GBP 17.3.2026.csv" → { fullName:"EUR<GBP", basePair:"EURGBP", dateSort, dateDisplay }
 function parseFilename(name){
   const base=name.replace(/\.csv$/i,'').trim();
   const m=base.match(/(\d{1,2}\.\d{1,2}\.\d{2,4})\s*$/);
   if(!m)return null;
   const dateRaw=m[1];
-  const pair=base.slice(0,base.lastIndexOf(dateRaw)).trim();
-  if(!pair)return null;
+  const fullName=base.slice(0,base.lastIndexOf(dateRaw)).trim();
+  if(!fullName)return null;
+  // basePair: odstráň < > zo názvu pre zoskupenie
+  const basePair=fullName.replace(/[<>]/g,'').trim();
   const pts=dateRaw.split('.');
   const d=pts[0].padStart(2,'0'),mo=pts[1].padStart(2,'0');
   let y=pts[2];if(y.length===2)y='20'+y;
-  return{pair,dateSort:`${y}-${mo}-${d}`,dateDisplay:dateRaw};
+  return{fullName,basePair,dateSort:`${y}-${mo}-${d}`,dateDisplay:dateRaw};
 }
 
+// ── LOAD FILES ──
 async function loadAndParse(){
   showToast('Načítavam...','');
   allFiles=[];
   try{
     const fid=getFolderId();
+    if(!fid){showToast('Chýba ID priečinka','error');return;}
     const q=`(mimeType='text/csv' or name contains '.csv') and '${fid}' in parents and trashed=false`;
     const data=await driveAPI(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=200`);
     const folder=await driveAPI(`https://www.googleapis.com/drive/v3/files/${fid}?fields=name`).catch(()=>({name:fid}));
@@ -220,26 +224,46 @@ async function loadAndParse(){
       const p=parseFilename(f.name);
       if(p)allFiles.push({id:f.id,name:f.name,...p});
     }
-    if(!allFiles.length){showToast('Žiadne CSV súbory nenájdené','error');return;}
+    if(!allFiles.length){showToast('Žiadne CSV súbory','error');return;}
     buildPairSelector();
     showToast(`Načítaných ${allFiles.length} súborov ✓`,'success');
   }catch(e){showToast('Chyba: '+e.message,'error');}
 }
 
+// ── SELECTORS ──
 function buildPairSelector(){
-  const pairs=[...new Set(allFiles.map(f=>f.pair))].sort();
+  // Zoskup podľa basePair — zobraz pôvodný fullName ako label
+  // Pre každý basePair vyber reprezentatívny fullName (napr. s <)
+  const pairMap={};
+  for(const f of allFiles){
+    if(!pairMap[f.basePair]){
+      // Preferuj verziu s < ako label, inak prvú nájdenú
+      pairMap[f.basePair]=f.fullName;
+    } else if(f.fullName.includes('<')){
+      pairMap[f.basePair]=f.fullName;
+    }
+  }
+  const pairs=Object.keys(pairMap).sort();
   const sel=document.getElementById('sel-pair');
-  sel.innerHTML='<option value="">— vyber pár —</option>'+pairs.map(p=>`<option value="${p}">${p}</option>`).join('');
+  sel.innerHTML='<option value="">— vyber pár —</option>'+
+    pairs.map(bp=>`<option value="${bp}">${pairMap[bp].replace('<','<').replace('>','>')}</option>`).join('');
   document.getElementById('sel-date').innerHTML='<option value="">— vyber pár —</option>';
   document.getElementById('btn-show').disabled=true;
 }
 
 function onPairChange(){
-  const pair=document.getElementById('sel-pair').value;
+  const basePair=document.getElementById('sel-pair').value;
   const sel=document.getElementById('sel-date');
-  if(!pair){sel.innerHTML='<option value="">— vyber pár —</option>';document.getElementById('btn-show').disabled=true;return;}
-  const dates=[...new Set(allFiles.filter(f=>f.pair===pair).map(f=>f.dateSort+'|'+f.dateDisplay))].sort().reverse();
-  sel.innerHTML='<option value="">— vyber dátum —</option>'+dates.map(d=>{const[s,dp]=d.split('|');return`<option value="${s}|${dp}">${dp}</option>`;}).join('');
+  if(!basePair){
+    sel.innerHTML='<option value="">— vyber pár —</option>';
+    document.getElementById('btn-show').disabled=true;
+    return;
+  }
+  const dates=[...new Set(
+    allFiles.filter(f=>f.basePair===basePair).map(f=>f.dateSort+'|'+f.dateDisplay)
+  )].sort().reverse();
+  sel.innerHTML='<option value="">— vyber dátum —</option>'+
+    dates.map(d=>{const[s,dp]=d.split('|');return`<option value="${s}|${dp}">${dp}</option>`;}).join('');
   document.getElementById('btn-show').disabled=true;
 }
 
@@ -247,31 +271,41 @@ function onDateChange(){
   document.getElementById('btn-show').disabled=!document.getElementById('sel-date').value;
 }
 
+// ── SHOW CHART ──
 async function showChart(){
-  const pair=document.getElementById('sel-pair').value;
+  const basePair=document.getElementById('sel-pair').value;
   const dateVal=document.getElementById('sel-date').value;
-  if(!pair||!dateVal)return;
+  if(!basePair||!dateVal)return;
   const[dateSort,dateDisplay]=dateVal.split('|');
-  const files=allFiles.filter(f=>f.pair===pair&&f.dateSort===dateSort);
+
+  // Nájdi všetky súbory pre tento pár a dátum
+  const files=allFiles.filter(f=>f.basePair===basePair&&f.dateSort===dateSort)
+    .sort((a,b)=>a.fullName.localeCompare(b.fullName)); // < pred >
+
   if(!files.length){showToast('Žiadne súbory','error');return;}
   const btn=document.getElementById('btn-show');
   btn.textContent='...';btn.disabled=true;
+
   try{
     const series=[];
     for(const f of files){
-      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,
+        {headers:{Authorization:'Bearer '+accessToken}});
       const text=await r.text();
-      series.push({name:f.name.replace(/\.csv$/i,''),points:parseCSV(text)});
+      series.push({name:f.fullName,points:parseCSV(text)});
     }
     renderStats(series);
-    renderChart(series,pair,dateDisplay);
+    renderChart(series,basePair,dateDisplay);
     if(series.length===2)renderCorr(series);
+    else document.getElementById('corr-card').style.display='none';
     document.getElementById('empty-state').style.display='none';
     showToast('Graf načítaný ✓','success');
   }catch(e){showToast('Chyba: '+e.message,'error');}
+
   btn.textContent='Zobraziť graf';btn.disabled=false;
 }
 
+// ── PARSE CSV ──
 function parseCSV(text){
   const rows=text.trim().split(/\r?\n/),points=[];
   for(const row of rows){
@@ -283,6 +317,7 @@ function parseCSV(text){
   return points;
 }
 
+// ── STATS ──
 function renderStats(series){
   const row=document.getElementById('stats-row');
   row.style.display='grid';
@@ -301,6 +336,7 @@ function renderStats(series){
   }).join('');
 }
 
+// ── CHART ──
 function renderChart(series,pair,dateDisplay){
   document.getElementById('chart-card').style.display='block';
   document.getElementById('chart-title').textContent=`${pair} — ${dateDisplay}`;
@@ -325,7 +361,8 @@ function renderChart(series,pair,dateDisplay){
         legend:{display:false},
         tooltip:{backgroundColor:'#181c23',borderColor:'#2a3140',borderWidth:1,
           titleColor:'#6b7a8d',bodyColor:'#c8d0dc',
-          titleFont:{family:'IBM Plex Mono',size:10},bodyFont:{family:'IBM Plex Mono',size:11},padding:10}
+          titleFont:{family:'IBM Plex Mono',size:10},
+          bodyFont:{family:'IBM Plex Mono',size:11},padding:10}
       },
       scales:{
         x:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:10},maxTicksLimit:16,maxRotation:45},grid:{color:'#1e2530'}},
@@ -335,6 +372,7 @@ function renderChart(series,pair,dateDisplay){
   });
 }
 
+// ── CORRELATION ──
 function renderCorr(series){
   const a=series[0].points.map(p=>p.y),b=series[1].points.map(p=>p.y);
   const n=Math.min(a.length,b.length);
@@ -343,13 +381,13 @@ function renderCorr(series){
   for(let i=0;i<n;i++){const ea=a[i]-ma,eb=b[i]-mb;num+=ea*eb;da+=ea*ea;db+=eb*eb;}
   const corr=da&&db?num/Math.sqrt(da*db):0;
   document.getElementById('corr-card').style.display='block';
-  const cls=corr>0.7?'pos':corr<-0.7?'neg':'';
-  document.getElementById('corr-value').className='corr-big '+cls;
+  document.getElementById('corr-value').className='corr-big '+(corr>0.7?'pos':corr<-0.7?'neg':'');
   document.getElementById('corr-value').textContent=corr.toFixed(4);
   document.getElementById('corr-desc').textContent=
     corr>0.7?'Silná pozitívna korelácia':corr<-0.7?'Silná negatívna korelácia':'Slabá alebo žiadna korelácia';
 }
 
+// ── TOAST ──
 function showToast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className='toast show'+(type?' '+type:'');
