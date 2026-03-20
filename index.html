@@ -138,7 +138,6 @@
 const COLORS=['#00d4aa','#0099ff','#f5c842','#ff4d6a'];
 let tokenClient,accessToken,chartInstance,allFiles=[];
 
-// ── CONFIG ──
 function saveConfig(){
   localStorage.setItem('td_cid',document.getElementById('client-id-input').value.trim());
   localStorage.setItem('td_fid',document.getElementById('folder-id-input').value.trim());
@@ -149,7 +148,6 @@ function loadConfig(){
 }
 function getFolderId(){return document.getElementById('folder-id-input').value.trim();}
 
-// ── AUTH ──
 function startAuth(){
   const cid=document.getElementById('client-id-input').value.trim();
   if(!cid){showToast('Vlož Client ID','error');return;}
@@ -184,15 +182,12 @@ function logout(){
   document.getElementById('folder-badge').style.display='none';
 }
 
-// ── DRIVE ──
 async function driveAPI(url){
   const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
   if(!r.ok){if(r.status===401)logout();throw new Error('API '+r.status);}
   return r.json();
 }
 
-// ── PARSE FILENAME ──
-// "EUR<GBP 17.3.2026.csv" → { fullName:"EUR<GBP", basePair:"EURGBP", dateSort, dateDisplay }
 function parseFilename(name){
   const base=name.replace(/\.csv$/i,'').trim();
   const m=base.match(/(\d{1,2}\.\d{1,2}\.\d{2,4})\s*$/);
@@ -200,7 +195,6 @@ function parseFilename(name){
   const dateRaw=m[1];
   const fullName=base.slice(0,base.lastIndexOf(dateRaw)).trim();
   if(!fullName)return null;
-  // basePair: odstráň < > zo názvu pre zoskupenie
   const basePair=fullName.replace(/[<>]/g,'').trim();
   const pts=dateRaw.split('.');
   const d=pts[0].padStart(2,'0'),mo=pts[1].padStart(2,'0');
@@ -208,7 +202,6 @@ function parseFilename(name){
   return{fullName,basePair,dateSort:`${y}-${mo}-${d}`,dateDisplay:dateRaw};
 }
 
-// ── LOAD FILES ──
 async function loadAndParse(){
   showToast('Načítavam...','');
   allFiles=[];
@@ -230,23 +223,16 @@ async function loadAndParse(){
   }catch(e){showToast('Chyba: '+e.message,'error');}
 }
 
-// ── SELECTORS ──
 function buildPairSelector(){
-  // Zoskup podľa basePair — zobraz pôvodný fullName ako label
-  // Pre každý basePair vyber reprezentatívny fullName (napr. s <)
   const pairMap={};
   for(const f of allFiles){
-    if(!pairMap[f.basePair]){
-      // Preferuj verziu s < ako label, inak prvú nájdenú
-      pairMap[f.basePair]=f.fullName;
-    } else if(f.fullName.includes('<')){
-      pairMap[f.basePair]=f.fullName;
-    }
+    if(!pairMap[f.basePair]){pairMap[f.basePair]=f.fullName;}
+    else if(f.fullName.includes('<')){pairMap[f.basePair]=f.fullName;}
   }
   const pairs=Object.keys(pairMap).sort();
   const sel=document.getElementById('sel-pair');
   sel.innerHTML='<option value="">— vyber pár —</option>'+
-    pairs.map(bp=>`<option value="${bp}">${pairMap[bp].replace('<','<').replace('>','>')}</option>`).join('');
+    pairs.map(bp=>`<option value="${bp}">${pairMap[bp]}</option>`).join('');
   document.getElementById('sel-date').innerHTML='<option value="">— vyber pár —</option>';
   document.getElementById('btn-show').disabled=true;
 }
@@ -254,16 +240,9 @@ function buildPairSelector(){
 function onPairChange(){
   const basePair=document.getElementById('sel-pair').value;
   const sel=document.getElementById('sel-date');
-  if(!basePair){
-    sel.innerHTML='<option value="">— vyber pár —</option>';
-    document.getElementById('btn-show').disabled=true;
-    return;
-  }
-  const dates=[...new Set(
-    allFiles.filter(f=>f.basePair===basePair).map(f=>f.dateSort+'|'+f.dateDisplay)
-  )].sort().reverse();
-  sel.innerHTML='<option value="">— vyber dátum —</option>'+
-    dates.map(d=>{const[s,dp]=d.split('|');return`<option value="${s}|${dp}">${dp}</option>`;}).join('');
+  if(!basePair){sel.innerHTML='<option value="">— vyber pár —</option>';document.getElementById('btn-show').disabled=true;return;}
+  const dates=[...new Set(allFiles.filter(f=>f.basePair===basePair).map(f=>f.dateSort+'|'+f.dateDisplay))].sort().reverse();
+  sel.innerHTML='<option value="">— vyber dátum —</option>'+dates.map(d=>{const[s,dp]=d.split('|');return`<option value="${s}|${dp}">${dp}</option>`;}).join('');
   document.getElementById('btn-show').disabled=true;
 }
 
@@ -271,26 +250,19 @@ function onDateChange(){
   document.getElementById('btn-show').disabled=!document.getElementById('sel-date').value;
 }
 
-// ── SHOW CHART ──
 async function showChart(){
   const basePair=document.getElementById('sel-pair').value;
   const dateVal=document.getElementById('sel-date').value;
   if(!basePair||!dateVal)return;
   const[dateSort,dateDisplay]=dateVal.split('|');
-
-  // Nájdi všetky súbory pre tento pár a dátum
-  const files=allFiles.filter(f=>f.basePair===basePair&&f.dateSort===dateSort)
-    .sort((a,b)=>a.fullName.localeCompare(b.fullName)); // < pred >
-
+  const files=allFiles.filter(f=>f.basePair===basePair&&f.dateSort===dateSort).sort((a,b)=>a.fullName.localeCompare(b.fullName));
   if(!files.length){showToast('Žiadne súbory','error');return;}
   const btn=document.getElementById('btn-show');
   btn.textContent='...';btn.disabled=true;
-
   try{
     const series=[];
     for(const f of files){
-      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,
-        {headers:{Authorization:'Bearer '+accessToken}});
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
       const text=await r.text();
       series.push({name:f.fullName,points:parseCSV(text)});
     }
@@ -301,11 +273,9 @@ async function showChart(){
     document.getElementById('empty-state').style.display='none';
     showToast('Graf načítaný ✓','success');
   }catch(e){showToast('Chyba: '+e.message,'error');}
-
   btn.textContent='Zobraziť graf';btn.disabled=false;
 }
 
-// ── PARSE CSV ──
 function parseCSV(text){
   const rows=text.trim().split(/\r?\n/),points=[];
   for(const row of rows){
@@ -317,7 +287,6 @@ function parseCSV(text){
   return points;
 }
 
-// ── STATS ──
 function renderStats(series){
   const row=document.getElementById('stats-row');
   row.style.display='grid';
@@ -336,7 +305,6 @@ function renderStats(series){
   }).join('');
 }
 
-// ── CHART ──
 function renderChart(series,pair,dateDisplay){
   document.getElementById('chart-card').style.display='block';
   document.getElementById('chart-title').textContent=`${pair} — ${dateDisplay}`;
@@ -372,7 +340,6 @@ function renderChart(series,pair,dateDisplay){
   });
 }
 
-// ── CORRELATION ──
 function renderCorr(series){
   const a=series[0].points.map(p=>p.y),b=series[1].points.map(p=>p.y);
   const n=Math.min(a.length,b.length);
@@ -387,7 +354,6 @@ function renderCorr(series){
     corr>0.7?'Silná pozitívna korelácia':corr<-0.7?'Silná negatívna korelácia':'Slabá alebo žiadna korelácia';
 }
 
-// ── TOAST ──
 function showToast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className='toast show'+(type?' '+type:'');
