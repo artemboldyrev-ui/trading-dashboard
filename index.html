@@ -5,124 +5,120 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pairs Trading Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
-  :root {
-    --bg:#0a0c0f; --bg2:#111318; --bg3:#181c23;
-    --border:#1e2530; --border2:#2a3140;
-    --text:#c8d0dc; --text2:#6b7a8d; --text3:#3d4a58;
-    --accent:#00d4aa; --accent2:#0099ff; --red:#ff4d6a; --yellow:#f5c842;
-    --font-mono:'IBM Plex Mono',monospace; --font:'IBM Plex Sans',sans-serif;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
-
-  /* TOPBAR */
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:52px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100}
-  .logo{font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
-  .logo span{color:var(--text2);font-weight:300}
-  .topbar-right{display:flex;align-items:center;gap:10px}
-  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .live-label{font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
-
-  /* BUTTONS */
-  .btn{font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:3px;border:none;cursor:pointer;transition:all .15s}
-  .btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00f0c0}
-  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
-  .btn-active{background:var(--accent2);color:#fff;border:1px solid var(--accent2)}
-  .btn-sm{padding:4px 10px;font-size:10px}
-  .btn:disabled{opacity:.4;cursor:not-allowed}
-
-  .main{padding:20px 28px;max-width:1400px;margin:0 auto}
-
-  /* AUTH */
-  #auth-screen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px)}
-  .auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:40px 48px;max-width:440px;width:100%;text-align:center}
-  .auth-icon{font-size:36px;margin-bottom:20px}
-  .auth-card h2{font-family:var(--font-mono);font-size:14px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text);margin-bottom:10px}
-  .auth-card p{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:28px}
-  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;text-align:left}
-  .field-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
-  .field-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:9px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text);width:100%;outline:none;transition:border-color .15s}
-  .field-input:focus{border-color:var(--accent)}
-  .field-input::placeholder{color:var(--text3)}
-
-  /* DASHBOARD */
-  #dashboard{display:none}
-
-  /* PAIR CONFIG */
-  .config-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:18px 22px;margin-bottom:16px}
-  .config-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-  .config-group{display:flex;flex-direction:column;gap:5px}
-  .config-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
-  .config-select{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:7px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text);outline:none;cursor:pointer;min-width:130px;appearance:none}
-  .config-select:focus{border-color:var(--accent)}
-  .lot-row{display:flex;align-items:center;gap:8px}
-  .lot-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:7px 10px;font-family:var(--font-mono);font-size:12px;color:var(--text);width:90px;outline:none;transition:border-color .15s;text-align:right}
-  .lot-input:focus{border-color:var(--accent)}
-  .lot-input.auto{border-color:var(--accent2);color:var(--accent2)}
-  .price-tag{font-family:var(--font-mono);font-size:10px;color:var(--text3)}
-  .price-tag strong{color:var(--text2)}
-  .divider{width:1px;height:40px;background:var(--border2);margin:0 4px}
-
-  /* TABS */
-  .tabs{display:flex;gap:4px;margin-bottom:16px}
-  .tab{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:6px 16px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;color:var(--text2);background:transparent;transition:all .15s}
-  .tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
-
-  /* STATS */
-  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
-  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 18px}
-  .stat-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:6px}
-  .stat-value{font-family:var(--font-mono);font-size:18px;font-weight:500}
-  .pos{color:var(--accent)}.neg{color:var(--red)}.neu{color:var(--text2)}
-  .stat-sub{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:3px}
-
-  /* SIGNAL */
-  .signal-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 22px;margin-bottom:16px;display:flex;align-items:center;gap:16px}
-  .signal-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-  .signal-dot.buy{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-  .signal-dot.sell{background:var(--red);box-shadow:0 0 8px var(--red)}
-  .signal-dot.wait{background:var(--text3)}
-  .signal-text{font-family:var(--font-mono);font-size:12px}
-  .signal-sub{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:3px}
-
-  /* CHART */
-  .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px}
-  .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
-  .chart-title{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2)}
-  .chart-legend{display:flex;gap:14px;flex-wrap:wrap}
-  .legend-item{display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;color:var(--text2)}
-  .legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-  .chart-wrap{position:relative}
-
-  /* SPREAD CHART */
-  .spread-zero{border-top:1px dashed rgba(245,200,66,.3)}
-
-  .toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:10px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text);z-index:9999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
-  .toast.show{opacity:1;transform:translateY(0)}
-  .toast.error{border-color:rgba(255,77,106,.4);color:var(--red)}
-  .toast.success{border-color:rgba(0,212,170,.4);color:var(--accent)}
-  .toast.warn{border-color:rgba(245,200,66,.4);color:var(--yellow)}
-
-  .loading-overlay{display:none;position:absolute;inset:0;background:rgba(10,12,15,.7);border-radius:6px;align-items:center;justify-content:center;z-index:10}
-  .loading-overlay.show{display:flex}
-  .spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  select option{background:var(--bg3)}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+:root{--bg:#0a0c0f;--bg2:#111318;--bg3:#181c23;--border:#1e2530;--border2:#2a3140;--text:#c8d0dc;--text2:#6b7a8d;--text3:#3d4a58;--accent:#00d4aa;--blue:#0099ff;--red:#ff4d6a;--yellow:#f5c842;--font-mono:'IBM Plex Mono',monospace;--font:'IBM Plex Sans',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:13px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:50px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:200}
+.logo{font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
+.logo span{color:var(--text2);font-weight:300}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.live-ind{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn{font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:6px 13px;border-radius:3px;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00efc0}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-red{background:transparent;color:var(--red);border:1px solid rgba(255,77,106,.3)}.btn-red:hover{background:rgba(255,77,106,.1)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-sm{padding:4px 9px;font-size:9px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.main{padding:16px 24px;max-width:1600px;margin:0 auto}
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 50px)}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:36px 44px;max-width:500px;width:100%;text-align:center}
+.auth-icon{font-size:32px;margin-bottom:16px}
+.auth-card h2{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin-bottom:8px}
+.auth-card p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:24px}
+.sym-guide{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:12px 14px;margin-bottom:20px;text-align:left}
+.sym-guide-title{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px}
+.sym-row{display:flex;flex-wrap:wrap;gap:6px 16px}
+.sym-item{font-family:var(--font-mono);font-size:10px;color:var(--text2)}
+.sym-item strong{color:var(--accent)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;text-align:left}
+.field-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
+.field-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 11px;font-family:var(--font-mono);font-size:11px;color:var(--text);width:100%;outline:none;transition:border-color .15s}
+.field-input:focus{border-color:var(--accent)}
+.field-input::placeholder{color:var(--text3)}
+.api-note{font-size:10px;color:var(--text3);margin-top:4px}
+.api-note a{color:var(--blue);text-decoration:none}
+#dashboard{display:none}
+.config-bar{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:12px}
+.config-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.cfg-group{display:flex;flex-direction:column;gap:4px}
+.cfg-label{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+.cfg-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:6px 10px;font-family:var(--font-mono);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;width:130px}
+.cfg-input:focus{border-color:var(--accent)}
+.cfg-input::placeholder{color:var(--text3)}
+.lot-wrap{display:flex;align-items:center;gap:6px}
+.lot-input{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:6px 8px;font-family:var(--font-mono);font-size:11px;color:var(--text);width:80px;text-align:right;outline:none;transition:border-color .15s}
+.lot-input.auto{border-color:var(--blue);color:var(--blue)}
+.price-sub{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:2px}
+.price-sub strong{color:var(--text2)}
+.sep{width:1px;height:36px;background:var(--border2);margin:0 2px;align-self:flex-end;margin-bottom:4px}
+.ratio-val{font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--text2)}
+.ratio-sub{font-family:var(--font-mono);font-size:9px;margin-top:2px;color:var(--text3)}
+.control-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.period-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.prd-btn{font-family:var(--font-mono);font-size:10px;padding:5px 11px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;color:var(--text2);background:transparent;transition:all .15s}
+.prd-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.src-badge{font-family:var(--font-mono);font-size:9px;padding:3px 8px;border-radius:2px;border:1px solid var(--border2);color:var(--text3)}
+.src-badge.yahoo{color:#6ee7b7;border-color:rgba(110,231,183,.3)}
+.src-badge.alpha{color:var(--blue);border-color:rgba(0,153,255,.3)}
+.signal-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:12px}
+.sig-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sig-dot.green{background:var(--accent);box-shadow:0 0 8px rgba(0,212,170,.5)}
+.sig-dot.red{background:var(--red);box-shadow:0 0 8px rgba(255,77,106,.5)}
+.sig-dot.yellow{background:var(--yellow)}
+.sig-dot.gray{background:var(--text3)}
+.sig-text{font-family:var(--font-mono);font-size:11px;flex:1}
+.sig-sub{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:2px}
+.alert-cfg{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.alert-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text3)}
+.alert-inp{background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:4px 8px;font-family:var(--font-mono);font-size:10px;color:var(--text);width:60px;text-align:right;outline:none}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px}
+.stat-label{font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:5px}
+.stat-val{font-family:var(--font-mono);font-size:16px;font-weight:500}
+.stat-sub2{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:2px}
+.green{color:var(--accent)}.red{color:var(--red)}.blue{color:var(--blue)}.yellow{color:var(--yellow)}.gray{color:var(--text2)}
+.tabs{display:flex;gap:3px;margin-bottom:12px}
+.tab-btn{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:5px 14px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;color:var(--text2);background:transparent;transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;position:relative;margin-bottom:12px}
+.chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.chart-title{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2)}
+.chart-leg{display:flex;gap:12px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9px;color:var(--text2)}
+.leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.zoom-hint{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:6px;text-align:right}
+.history-table{width:100%;border-collapse:collapse}
+.history-table th{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;color:var(--text3);padding:6px 10px;text-align:left;font-weight:400;border-bottom:1px solid var(--border)}
+.history-table td{font-family:var(--font-mono);font-size:10px;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
+.history-table tr:hover td{background:var(--bg3)}
+.load-overlay{display:none;position:absolute;inset:0;background:rgba(10,12,15,.75);border-radius:6px;align-items:center;justify-content:center;z-index:10;flex-direction:column;gap:10px}
+.load-overlay.show{display:flex}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-family:var(--font-mono);font-size:10px;color:var(--text3)}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:10px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text);z-index:9999;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;max-width:420px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.err{border-color:rgba(255,77,106,.5);color:var(--red)}
+.toast.ok{border-color:rgba(0,212,170,.5);color:var(--accent)}
+.toast.warn{border-color:rgba(245,200,66,.5);color:var(--yellow)}
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="logo">Pairs<span>/</span>Trading</div>
   <div class="topbar-right">
-    <div class="live-dot" id="live-dot" style="display:none"></div>
-    <span class="live-label" id="live-label" style="display:none">Live</span>
-    <button class="btn btn-ghost btn-sm" id="btn-settings" onclick="showSettings()" style="display:none">⚙ Nastavenia</button>
-    <button class="btn btn-ghost btn-sm" id="btn-logout" onclick="logout()" style="display:none">Odhlásiť</button>
+    <div class="live-ind" id="live-ind" style="display:none"><div class="live-dot"></div>Live</div>
+    <span id="upd-time" style="font-family:var(--font-mono);font-size:9px;color:var(--text3);display:none"></span>
+    <button class="btn btn-ghost btn-sm" onclick="showAuth()" id="btn-cfg" style="display:none">⚙ API</button>
+    <button class="btn btn-red btn-sm" onclick="logout()" id="btn-out" style="display:none">Odhlásiť</button>
   </div>
 </div>
 
@@ -131,530 +127,605 @@
   <div class="auth-card">
     <div class="auth-icon">📈</div>
     <h2>Pairs Trading</h2>
-    <p>Zadaj svoje API kľúče pre prístup k live a historickým dátam.</p>
-    <div class="field">
-      <div class="field-label">Twelve Data API Key</div>
-      <input class="field-input" id="td-key" type="text" placeholder="váš API kľúč" oninput="saveKeys()">
+    <p>Live a historické dáta pre pairs trading. Yahoo Finance (zadarmo, bez kľúča) + Alpha Vantage pre dlhšiu históriu.</p>
+    <div class="sym-guide">
+      <div class="sym-guide-title">Symboly ktoré môžeš použiť:</div>
+      <div class="sym-row">
+        <div class="sym-item"><strong>GC=F</strong> Zlato</div>
+        <div class="sym-item"><strong>SI=F</strong> Striebro</div>
+        <div class="sym-item"><strong>PL=F</strong> Platina</div>
+        <div class="sym-item"><strong>HG=F</strong> Meď</div>
+        <div class="sym-item"><strong>EURUSD=X</strong> EUR/USD</div>
+        <div class="sym-item"><strong>GBPUSD=X</strong> GBP/USD</div>
+        <div class="sym-item"><strong>EURGBP=X</strong> EUR/GBP</div>
+        <div class="sym-item"><strong>BTC-USD</strong> Bitcoin</div>
+        <div class="sym-item"><strong>ETH-USD</strong> Ethereum</div>
+        <div class="sym-item"><strong>AAPL</strong> Apple</div>
+        <div class="sym-item"><strong>MSFT</strong> Microsoft</div>
+        <div class="sym-item"><strong>SPY</strong> S&P 500 ETF</div>
+      </div>
     </div>
     <div class="field">
-      <div class="field-label">Google Drive Client ID (pre CSV)</div>
-      <input class="field-input" id="gd-cid" type="text" placeholder="xxxx.apps.googleusercontent.com" oninput="saveKeys()">
+      <div class="field-label">Alpha Vantage API Key (pre históriu 30 dní)</div>
+      <input class="field-input" id="av-key" type="text" placeholder="váš kľúč" oninput="saveKeys()">
+      <div class="api-note">Bezplatný kľúč: <a href="https://www.alphavantage.co/support/#api-key" target="_blank">alphavantage.co</a></div>
     </div>
-    <button class="btn btn-primary" style="width:100%;padding:11px;margin-top:8px" onclick="startApp()">Spustiť dashboard</button>
+    <button class="btn btn-primary" style="width:100%;padding:10px;margin-top:12px" onclick="startApp()">Spustiť Dashboard</button>
   </div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard" class="main">
-
-  <!-- PAIR CONFIG -->
-  <div class="config-card">
+  <!-- CONFIG -->
+  <div class="config-bar">
     <div class="config-row">
-      <div class="config-group">
-        <div class="config-label">Nástroj A</div>
-        <select class="config-select" id="sym-a" onchange="onSymChange()">
-          <option value="XAU/USD">Zlato (XAU)</option>
-          <option value="XAG/USD">Striebro (XAG)</option>
-          <option value="EUR/USD">EUR/USD</option>
-          <option value="EUR/GBP">EUR/GBP</option>
-          <option value="GBP/USD">GBP/USD</option>
-          <option value="BTC/USD">Bitcoin</option>
-          <option value="ETH/USD">Ethereum</option>
-        </select>
+      <div class="cfg-group">
+        <div class="cfg-label">Nástroj A</div>
+        <input class="cfg-input" id="sym-a" type="text" placeholder="GC=F" value="GC=F">
+        <div class="price-sub">@ <strong id="px-a">—</strong></div>
       </div>
-      <div class="config-group">
-        <div class="config-label">Lot A</div>
-        <div class="lot-row">
-          <input class="lot-input" id="lot-a" type="number" value="1" step="0.01" min="0.01" oninput="onLotAChange()">
+      <div class="cfg-group">
+        <div class="cfg-label">Lot A</div>
+        <div class="lot-wrap">
+          <input class="lot-input" id="lot-a" type="number" value="1" step="0.01" min="0.01" oninput="onLotA()">
         </div>
-        <div class="price-tag">@ <strong id="price-a">—</strong></div>
+        <div class="price-sub">Hodnota: <strong id="val-a">—</strong></div>
       </div>
-
-      <div class="divider"></div>
-
-      <div class="config-group">
-        <div class="config-label">Nástroj B</div>
-        <select class="config-select" id="sym-b" onchange="onSymChange()">
-          <option value="XAG/USD">Striebro (XAG)</option>
-          <option value="XAU/USD">Zlato (XAU)</option>
-          <option value="EUR/USD">EUR/USD</option>
-          <option value="EUR/GBP">EUR/GBP</option>
-          <option value="GBP/USD">GBP/USD</option>
-          <option value="BTC/USD">Bitcoin</option>
-          <option value="ETH/USD">Ethereum</option>
-        </select>
+      <div class="sep"></div>
+      <div class="cfg-group">
+        <div class="cfg-label">Nástroj B</div>
+        <input class="cfg-input" id="sym-b" type="text" placeholder="SI=F" value="SI=F">
+        <div class="price-sub">@ <strong id="px-b">—</strong></div>
       </div>
-      <div class="config-group">
-        <div class="config-label">Lot B</div>
-        <div class="lot-row">
-          <input class="lot-input auto" id="lot-b" type="number" step="0.01" min="0.01" oninput="onLotBManual()">
-          <button class="btn btn-ghost btn-sm" id="btn-auto" onclick="toggleAutoLot()" title="Prepnúť auto/manuálne">Auto</button>
+      <div class="cfg-group">
+        <div class="cfg-label">Lot B</div>
+        <div class="lot-wrap">
+          <input class="lot-input auto" id="lot-b" type="number" step="0.01" min="0.01" oninput="onLotB()">
+          <button class="btn btn-blue btn-sm" id="btn-auto" onclick="toggleAuto()">Auto</button>
         </div>
-        <div class="price-tag">@ <strong id="price-b">—</strong></div>
+        <div class="price-sub">Hodnota: <strong id="val-b">—</strong></div>
       </div>
-
-      <div class="divider"></div>
-
-      <div class="config-group">
-        <div class="config-label">Pomer hodnôt</div>
-        <div class="stat-value neu" id="ratio-display" style="font-size:14px">—</div>
-        <div class="price-tag" id="ratio-sub">A: — · B: —</div>
+      <div class="sep"></div>
+      <div class="cfg-group">
+        <div class="cfg-label">Pomer A/B</div>
+        <div class="ratio-val" id="ratio-val">—</div>
+        <div class="ratio-sub" id="ratio-sub"></div>
       </div>
+      <button class="btn btn-primary" id="btn-load" onclick="loadData()" style="margin-left:auto;padding:8px 20px">Načítať</button>
+    </div>
+  </div>
 
-      <button class="btn btn-primary" onclick="loadData()" id="btn-load" style="margin-left:auto">Načítať</button>
+  <!-- CONTROL -->
+  <div class="control-bar">
+    <div class="period-row">
+      <button class="prd-btn active" onclick="setPrd('1d')" id="p-1d">1D</button>
+      <button class="prd-btn" onclick="setPrd('5d')" id="p-5d">5D</button>
+      <button class="prd-btn" onclick="setPrd('10d')" id="p-10d">10D</button>
+      <button class="prd-btn" onclick="setPrd('30d')" id="p-30d">30D</button>
+      <button class="prd-btn" onclick="setPrd('90d')" id="p-90d">90D</button>
+      <button class="prd-btn" onclick="setPrd('180d')" id="p-180d">180D</button>
+      <span class="src-badge" id="src-badge">Yahoo Finance</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportXLSX()">⬇ Excel</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetZoom()">⤢ Reset zoom</button>
     </div>
   </div>
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('live')" id="tab-live">Live</button>
-    <button class="tab" onclick="switchTab('backtest')" id="tab-backtest">Backtest 6M</button>
+    <button class="tab-btn active" onclick="switchTab('main')" id="t-main">Graf</button>
+    <button class="tab-btn" onclick="switchTab('spread')" id="t-spread">Spread</button>
+    <button class="tab-btn" onclick="switchTab('corr')" id="t-corr">Korelácia</button>
+    <button class="tab-btn" onclick="switchTab('hist')" id="t-hist">História vstupov</button>
   </div>
 
   <!-- SIGNAL -->
-  <div class="signal-card" id="signal-card" style="display:none">
-    <div class="signal-dot wait" id="signal-dot"></div>
-    <div>
-      <div class="signal-text" id="signal-text">Načítavam...</div>
-      <div class="signal-sub" id="signal-sub"></div>
+  <div class="signal-bar" id="sig-bar" style="display:none">
+    <div class="sig-dot gray" id="sig-dot"></div>
+    <div style="flex:1">
+      <div class="sig-text" id="sig-text">—</div>
+      <div class="sig-sub" id="sig-sub"></div>
+    </div>
+    <div class="alert-cfg">
+      <div class="alert-lbl">Alert |Z| ></div>
+      <input class="alert-inp" id="alert-thr" type="number" value="2" step="0.1" min="0.5">
+      <button class="btn btn-ghost btn-sm" onclick="addEntry()">+ Zaznačiť vstup</button>
     </div>
   </div>
 
   <!-- STATS -->
-  <div class="stats-row" id="stats-row" style="display:none"></div>
+  <div class="stats-grid" id="stats-grid" style="display:none"></div>
 
-  <!-- MAIN CHART -->
-  <div class="chart-card" id="chart-main" style="display:none;position:relative">
-    <div class="loading-overlay" id="loading-main"><div class="spinner"></div></div>
-    <div class="chart-header">
-      <div class="chart-title" id="chart-main-title">Vývoj pozícií</div>
-      <div class="chart-legend" id="chart-main-legend"></div>
+  <!-- MAIN TAB -->
+  <div id="c-main-wrap">
+    <div class="chart-card" id="card-main" style="display:none">
+      <div class="load-overlay" id="load-main"><div class="spinner"></div><div class="load-txt">Načítavam...</div></div>
+      <div class="chart-hdr">
+        <div class="chart-title" id="title-main">Vývoj pozícií</div>
+        <div class="chart-leg" id="leg-main"></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="zm('main',1.3)">+</button>
+          <button class="btn btn-ghost btn-sm" onclick="zm('main',0.7)">−</button>
+        </div>
+      </div>
+      <div style="height:380px"><canvas id="c-main"></canvas></div>
+      <div class="zoom-hint">Scroll = zoom · Ťahaj = posun</div>
     </div>
-    <div class="chart-wrap" style="height:360px"><canvas id="canvas-main"></canvas></div>
   </div>
 
-  <!-- SPREAD CHART -->
-  <div class="chart-card" id="chart-spread" style="display:none;position:relative">
-    <div class="loading-overlay" id="loading-spread"><div class="spinner"></div></div>
-    <div class="chart-header">
-      <div class="chart-title">Spread (A − B) · Križovania</div>
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3)" id="cross-count"></div>
+  <!-- SPREAD TAB -->
+  <div id="c-spread-wrap" style="display:none">
+    <div class="chart-card" id="card-spread">
+      <div class="load-overlay" id="load-spread"><div class="spinner"></div><div class="load-txt">Počítam spread...</div></div>
+      <div class="chart-hdr">
+        <div class="chart-title">Spread (A−B) · Z-score pásma</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3)" id="cross-lbl"></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="zm('spread',1.3)">+</button>
+          <button class="btn btn-ghost btn-sm" onclick="zm('spread',0.7)">−</button>
+        </div>
+      </div>
+      <div style="height:300px"><canvas id="c-spread"></canvas></div>
+      <div class="zoom-hint">Scroll = zoom · Ťahaj = posun</div>
     </div>
-    <div class="chart-wrap" style="height:220px"><canvas id="canvas-spread"></canvas></div>
   </div>
 
+  <!-- CORR TAB -->
+  <div id="c-corr-wrap" style="display:none">
+    <div class="chart-card">
+      <div class="chart-hdr"><div class="chart-title">Korelačná analýza</div></div>
+      <div id="corr-body"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="c-hist-wrap" style="display:none">
+    <div class="chart-card">
+      <div class="chart-hdr">
+        <div class="chart-title">História vstupov</div>
+        <button class="btn btn-red btn-sm" onclick="clearHist()">Vymazať</button>
+      </div>
+      <div id="hist-body"></div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── STATE ──
-const COLORS = ['#00d4aa','#0099ff'];
-const SPREAD_COLOR = '#f5c842';
-let chartMain=null, chartSpread=null;
-let autoLot=true;
-let liveInterval=null;
-let currentTab='live';
-let priceA=0, priceB=0;
+const COLORS=['#00d4aa','#0099ff'];
+let chartM=null,chartS=null,autoLot=true,liveTimer=null;
+let period='1d',activeTab='main';
+let priceA=0,priceB=0,aligned=[],entries=[];
+let alertFired=false;
 
-// ── SYMBOLS ──
-const SYMBOL_LABELS = {
-  'XAU/USD':'Zlato','XAG/USD':'Striebro','EUR/USD':'EUR/USD',
-  'EUR/GBP':'EUR/GBP','GBP/USD':'GBP/USD','BTC/USD':'Bitcoin','ETH/USD':'Ethereum'
-};
-
-// ── CONFIG ──
-function saveKeys(){
-  localStorage.setItem('pt_tdkey', document.getElementById('td-key').value.trim());
-  localStorage.setItem('pt_gdcid', document.getElementById('gd-cid').value.trim());
-}
-function loadKeys(){
-  document.getElementById('td-key').value = localStorage.getItem('pt_tdkey')||'';
-  document.getElementById('gd-cid').value = localStorage.getItem('pt_gdcid')||'';
-}
-function getTDKey(){ return localStorage.getItem('pt_tdkey')||''; }
+// CONFIG
+function saveKeys(){localStorage.setItem('pt_av',document.getElementById('av-key').value.trim());}
+function loadKeys(){document.getElementById('av-key').value=localStorage.getItem('pt_av')||'';}
+function getAV(){return localStorage.getItem('pt_av')||'';}
 
 function startApp(){
-  const key = document.getElementById('td-key').value.trim();
-  if(!key){ showToast('Vlož Twelve Data API kľúč','error'); return; }
+  if(!document.getElementById('av-key').value.trim()){toast('Vlož Alpha Vantage API kľúč','err');return;}
   saveKeys();
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('dashboard').style.display='block';
-  document.getElementById('btn-settings').style.display='block';
-  document.getElementById('btn-logout').style.display='block';
-  fetchPrices();
+  ['btn-cfg','btn-out'].forEach(id=>document.getElementById(id).style.display='block');
+  loadEntries();
+  renderHist();
 }
-
-function showSettings(){
-  document.getElementById('auth-screen').style.display='flex';
-  document.getElementById('dashboard').style.display='none';
-}
-
+function showAuth(){document.getElementById('auth-screen').style.display='flex';document.getElementById('dashboard').style.display='none';}
 function logout(){
-  if(liveInterval) clearInterval(liveInterval);
+  clearInterval(liveTimer);
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('dashboard').style.display='none';
-  document.getElementById('btn-settings').style.display='none';
-  document.getElementById('btn-logout').style.display='none';
-  document.getElementById('live-dot').style.display='none';
-  document.getElementById('live-label').style.display='none';
+  ['btn-cfg','btn-out','live-ind','upd-time'].forEach(id=>{document.getElementById(id).style.display='none';});
 }
 
-// ── TWELVE DATA API ──
-async function tdFetch(endpoint){
-  const key = getTDKey();
-  const url = `https://api.twelvedata.com/${endpoint}&apikey=${key}`;
-  const r = await fetch(url);
-  const data = await r.json();
-  if(data.status==='error') throw new Error(data.message);
-  return data;
+// PERIOD
+function setPrd(p){
+  period=p;
+  ['1d','5d','10d','30d','90d','180d'].forEach(x=>document.getElementById('p-'+x).className='prd-btn'+(x===p?' active':''));
+  const days=parseInt(p);
+  const badge=document.getElementById('src-badge');
+  if(days<=7){badge.textContent='Yahoo Finance · 1-5min';badge.className='src-badge yahoo';}
+  else{badge.textContent='Alpha Vantage · 1min';badge.className='src-badge alpha';}
 }
 
-// ── LIVE PRICES ──
-async function fetchPrices(){
-  const symA = document.getElementById('sym-a').value;
-  const symB = document.getElementById('sym-b').value;
+// YAHOO FINANCE
+async function fetchYahoo(sym,prd){
+  const days=parseInt(prd);
+  let range,interval;
+  if(days<=1){range='1d';interval='1m';}
+  else if(days<=5){range='5d';interval='5m';}
+  else{range='7d';interval='15m';}
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=${range}&interval=${interval}&includePrePost=false`;
+  const proxy=`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  const r=await fetch(proxy);
+  if(!r.ok)throw new Error('Yahoo '+r.status);
+  const d=await r.json();
+  if(d.chart?.error)throw new Error(d.chart.error.description||'Yahoo chyba');
+  const res=d.chart?.result?.[0];
+  if(!res)throw new Error('Žiadne dáta: '+sym);
+  const ts=res.timestamp||[];
+  const cl=res.indicators?.quote?.[0]?.close||[];
+  const meta=res.meta||{};
+  return{
+    currentPrice:meta.regularMarketPrice||cl.filter(Boolean).slice(-1)[0]||0,
+    series:ts.map((t,i)=>({t:new Date(t*1000).toISOString().slice(0,16).replace('T',' '),price:cl[i]||null})).filter(p=>p.price)
+  };
+}
+
+// ALPHA VANTAGE
+async function fetchAV(sym,prd){
+  const key=getAV();
+  const days=parseInt(prd);
+  let url;
+  // Futures / commodities cez Yahoo proxy lebo AV ich nepodporuje zadarmo
+  if(sym.endsWith('=F')||sym.endsWith('-USD')){
+    // Pre kovy a krypto použijeme Yahoo ale s dlhším range
+    const range=days<=30?'1mo':days<=90?'3mo':'6mo';
+    const interval=days<=30?'60m':'1d';
+    const yurl=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=${range}&interval=${interval}&includePrePost=false`;
+    const proxy=`https://api.allorigins.win/raw?url=${encodeURIComponent(yurl)}`;
+    const r=await fetch(proxy);
+    if(!r.ok)throw new Error('Yahoo '+r.status);
+    const d=await r.json();
+    const res=d.chart?.result?.[0];
+    if(!res)throw new Error('Žiadne dáta: '+sym);
+    const ts=res.timestamp||[];
+    const cl=res.indicators?.quote?.[0]?.close||[];
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
+    const series=ts.map((t,i)=>({t:new Date(t*1000).toISOString().slice(0,16).replace('T',' '),price:cl[i]||null}))
+      .filter(p=>p.price&&new Date(p.t)>=cutoff);
+    return{currentPrice:series.slice(-1)[0]?.price||0,series};
+  }
+  // Forex cez AV
+  if(sym.endsWith('=X')){
+    const base=sym.replace('=X','');
+    const from=base.slice(0,3),to=base.slice(3)||'USD';
+    url=`https://www.alphavantage.co/query?function=FX_INTRADAY&from_symbol=${from}&to_symbol=${to}&interval=60min&outputsize=full&apikey=${key}`;
+  } else {
+    // Akcie
+    url=`https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${sym}&interval=60min&outputsize=full&apikey=${key}`;
+  }
+  const r=await fetch(url);
+  const d=await r.json();
+  if(d['Note'])throw new Error('Alpha Vantage: limit 25 req/deň dosiahnutý');
+  if(d['Error Message'])throw new Error('Neznámy symbol: '+sym);
+  if(d['Information'])throw new Error('AV API limit');
+  const tsKey=Object.keys(d).find(k=>k.includes('Time Series'));
+  if(!tsKey)throw new Error('AV: neočakávaná odpoveď pre '+sym);
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
+  const series=Object.entries(d[tsKey])
+    .map(([t,v])=>({t,price:parseFloat(v['4. close']||v['1. close']||0)}))
+    .filter(p=>p.price&&new Date(p.t)>=cutoff)
+    .sort((a,b)=>a.t.localeCompare(b.t));
+  return{currentPrice:series.slice(-1)[0]?.price||0,series};
+}
+
+// LOAD DATA
+async function loadData(){
+  const sA=document.getElementById('sym-a').value.trim().toUpperCase();
+  const sB=document.getElementById('sym-b').value.trim().toUpperCase();
+  if(!sA||!sB){toast('Zadaj oba symboly','err');return;}
+  if(sA===sB){toast('Vyber rôzne nástroje','err');return;}
+  clearInterval(liveTimer);
+
+  const days=parseInt(period);
+  const useAV=days>7;
+
+  document.getElementById('load-main').classList.add('show');
+  document.getElementById('card-main').style.display='block';
+  document.getElementById('sig-bar').style.display='flex';
+  document.getElementById('stats-grid').style.display='grid';
+
+  toast(`Načítavam ${sA}/${sB} (${period})...`);
+
   try{
-    const data = await tdFetch(`price?symbol=${encodeURIComponent(symA)},${encodeURIComponent(symB)}`);
-    // Twelve Data vracia buď objekt alebo vnorený objekt
-    if(data[symA]) priceA = parseFloat(data[symA].price);
-    else if(data.price) priceA = parseFloat(data.price);
+    let rA,rB;
+    if(useAV){
+      toast('Načítavam — môže trvať 15-20s...');
+      rA=await fetchAV(sA,period);
+      await new Promise(r=>setTimeout(r,12000)); // AV rate limit
+      rB=await fetchAV(sB,period);
+    } else {
+      [rA,rB]=await Promise.all([fetchYahoo(sA,period),fetchYahoo(sB,period)]);
+    }
 
-    if(data[symB]) priceB = parseFloat(data[symB].price);
-
-    document.getElementById('price-a').textContent = priceA ? '$'+priceA.toFixed(2) : '—';
-    document.getElementById('price-b').textContent = priceB ? '$'+priceB.toFixed(2) : '—';
-
-    if(autoLot && priceA && priceB){
-      const lotA = parseFloat(document.getElementById('lot-a').value)||1;
-      const lotB = (priceA * lotA) / priceB;
-      document.getElementById('lot-b').value = lotB.toFixed(2);
+    priceA=rA.currentPrice;priceB=rB.currentPrice;
+    document.getElementById('px-a').textContent=priceA?'$'+priceA.toFixed(2):'—';
+    document.getElementById('px-b').textContent=priceB?'$'+priceB.toFixed(2):'—';
+    if(autoLot&&priceA&&priceB){
+      const la=parseFloat(document.getElementById('lot-a').value)||1;
+      document.getElementById('lot-b').value=((priceA*la)/priceB).toFixed(3);
     }
     updateRatio();
-    document.getElementById('live-dot').style.display='block';
-    document.getElementById('live-label').style.display='block';
-  }catch(e){
-    showToast('Chyba cien: '+e.message,'error');
-  }
+
+    const la=parseFloat(document.getElementById('lot-a').value)||1;
+    const lb=parseFloat(document.getElementById('lot-b').value)||1;
+    aligned=align(rA.series,rB.series,la,lb);
+    if(!aligned.length){toast('Žiadne spoločné dáta','err');return;}
+
+    renderMain(sA,sB);
+    renderSpread(sA,sB);
+    renderStats(sA,sB);
+    renderCorr(sA,sB);
+    updateSignal();
+
+    document.getElementById('live-ind').style.display='flex';
+    document.getElementById('upd-time').style.display='block';
+    document.getElementById('upd-time').textContent='↺ '+new Date().toLocaleTimeString('sk-SK');
+
+    if(period==='1d')liveTimer=setInterval(loadData,60000);
+    toast(`${aligned.length} sviečok načítaných ✓`,'ok');
+  }catch(e){toast('Chyba: '+e.message,'err');}
+
+  document.getElementById('load-main').classList.remove('show');
 }
 
-function updateRatio(){
-  const lotA = parseFloat(document.getElementById('lot-a').value)||0;
-  const lotB = parseFloat(document.getElementById('lot-b').value)||0;
-  const valA = lotA * priceA;
-  const valB = lotB * priceB;
-  const ratio = valB>0 ? (valA/valB).toFixed(3) : '—';
-  document.getElementById('ratio-display').textContent = ratio;
-  document.getElementById('ratio-sub').textContent =
-    `A: $${valA.toFixed(0)} · B: $${valB.toFixed(0)}`;
+// ALIGN
+function align(a,b,la,lb){
+  const mb={};for(const p of b)mb[p.t]=p.price;
+  return a.filter(p=>mb[p.t]).map(p=>({
+    t:p.t,pA:p.price,pB:mb[p.t],
+    vA:p.price*la,vB:mb[p.t]*lb,
+    spread:p.price*la-mb[p.t]*lb
+  }));
 }
 
-function onSymChange(){ fetchPrices(); }
-
-function onLotAChange(){
-  if(autoLot && priceA && priceB){
-    const lotA = parseFloat(document.getElementById('lot-a').value)||1;
-    document.getElementById('lot-b').value = ((priceA*lotA)/priceB).toFixed(2);
+// RATIO
+function onLotA(){
+  if(autoLot&&priceA&&priceB){
+    const la=parseFloat(document.getElementById('lot-a').value)||1;
+    document.getElementById('lot-b').value=((priceA*la)/priceB).toFixed(3);
   }
   updateRatio();
 }
-
-function onLotBManual(){
-  autoLot = false;
+function onLotB(){
+  autoLot=false;
   document.getElementById('btn-auto').className='btn btn-ghost btn-sm';
   document.getElementById('lot-b').className='lot-input';
   updateRatio();
 }
-
-function toggleAutoLot(){
-  autoLot = !autoLot;
-  const btn = document.getElementById('btn-auto');
-  const inp = document.getElementById('lot-b');
-  if(autoLot){
-    btn.className='btn btn-active btn-sm';
-    inp.className='lot-input auto';
-    onLotAChange();
-  } else {
-    btn.className='btn btn-ghost btn-sm';
-    inp.className='lot-input';
-  }
+function toggleAuto(){
+  autoLot=!autoLot;
+  document.getElementById('btn-auto').className='btn '+(autoLot?'btn-blue':'btn-ghost')+' btn-sm';
+  document.getElementById('lot-b').className='lot-input'+(autoLot?' auto':'');
+  if(autoLot)onLotA();
+}
+function updateRatio(){
+  const la=parseFloat(document.getElementById('lot-a').value)||0;
+  const lb=parseFloat(document.getElementById('lot-b').value)||0;
+  const va=la*priceA,vb=lb*priceB;
+  document.getElementById('val-a').textContent=va?'$'+va.toFixed(0):'—';
+  document.getElementById('val-b').textContent=vb?'$'+vb.toFixed(0):'—';
+  const r=vb>0?va/vb:0;
+  document.getElementById('ratio-val').textContent=r?r.toFixed(3):'—';
+  const el=document.getElementById('ratio-sub');
+  el.textContent=r?(Math.abs(r-1)<0.05?'dollar-neutral ✓':Math.abs(r-1)<0.15?'mierne nevyvážené':'nevyvážené'):'';
+  el.className='ratio-sub '+(r?(Math.abs(r-1)<0.05?'green':Math.abs(r-1)<0.15?'yellow':'red'):'');
 }
 
-// ── TABS ──
-function switchTab(tab){
-  currentTab=tab;
-  document.getElementById('tab-live').className='tab'+(tab==='live'?' active':'');
-  document.getElementById('tab-backtest').className='tab'+(tab==='backtest'?' active':'');
-}
-
-// ── LOAD DATA ──
-async function loadData(){
-  const symA = document.getElementById('sym-a').value;
-  const symB = document.getElementById('sym-b').value;
-  const lotA = parseFloat(document.getElementById('lot-a').value)||1;
-  const lotB = parseFloat(document.getElementById('lot-b').value)||1;
-
-  if(symA===symB){ showToast('Vyber rôzne nástroje','error'); return; }
-
-  document.getElementById('loading-main').classList.add('show');
-  document.getElementById('loading-spread').classList.add('show');
-  document.getElementById('chart-main').style.display='block';
-  document.getElementById('chart-spread').style.display='block';
-  document.getElementById('signal-card').style.display='flex';
-  document.getElementById('stats-row').style.display='grid';
-
-  if(liveInterval) clearInterval(liveInterval);
-
-  try{
-    let interval, outputsize;
-    if(currentTab==='live'){
-      interval='1min'; outputsize=390; // ~1 obchodný deň
-    } else {
-      interval='1h'; outputsize=1080; // ~6 mesiacov obchodných hodín
-    }
-
-    // Načítaj časové rady
-    const [dataA, dataB] = await Promise.all([
-      tdFetch(`time_series?symbol=${encodeURIComponent(symA)}&interval=${interval}&outputsize=${outputsize}`),
-      tdFetch(`time_series?symbol=${encodeURIComponent(symB)}&interval=${interval}&outputsize=${outputsize}`)
-    ]);
-
-    const seriesA = parseTimeSeries(dataA, lotA);
-    const seriesB = parseTimeSeries(dataB, lotB);
-
-    // Zarovnaj časové rady podľa spoločných časových pečiatok
-    const aligned = alignSeries(seriesA, seriesB);
-
-    renderMainChart(aligned, symA, symB);
-    renderSpreadChart(aligned, symA, symB);
-    renderStats(aligned, symA, symB);
-    updateSignal(aligned);
-
-    // Live refresh každých 60 sekúnd pre live tab
-    if(currentTab==='live'){
-      liveInterval = setInterval(()=>loadData(), 60000);
-    }
-
-    showToast(`Načítané ✓`,'success');
-  }catch(e){
-    showToast('Chyba: '+e.message,'error');
-  }
-
-  document.getElementById('loading-main').classList.remove('show');
-  document.getElementById('loading-spread').classList.remove('show');
-}
-
-// ── PARSE TIME SERIES ──
-function parseTimeSeries(data, lot){
-  if(!data.values) return [];
-  return data.values.slice().reverse().map(v=>({
-    t: v.datetime,
-    price: parseFloat(v.close),
-    value: parseFloat(v.close) * lot
-  }));
-}
-
-// ── ALIGN SERIES ──
-function alignSeries(a, b){
-  const mapB = {};
-  for(const p of b) mapB[p.t]=p;
-  const result=[];
-  for(const pa of a){
-    const pb=mapB[pa.t];
-    if(pb) result.push({
-      t:pa.t,
-      priceA:pa.price, valueA:pa.value,
-      priceB:pb.price, valueB:pb.value,
-      spread: pa.value - pb.value
-    });
-  }
-  return result;
-}
-
-// ── RENDER MAIN CHART ──
-function renderMainChart(data, symA, symB){
-  const labels = data.map(d=>d.t.slice(5,16)); // MM-DD HH:mm
-  const lnA = SYMBOL_LABELS[symA]||symA;
-  const lnB = SYMBOL_LABELS[symB]||symB;
-
-  document.getElementById('chart-main-title').textContent =
-    `${lnA} vs ${lnB} — vážené pozície`;
-
-  document.getElementById('chart-main-legend').innerHTML=[
-    `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[0]}"></div>${lnA}</div>`,
-    `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[1]}"></div>${lnB}</div>`
-  ].join('');
-
-  if(chartMain) chartMain.destroy();
-  chartMain = new Chart(document.getElementById('canvas-main').getContext('2d'),{
-    type:'line',
-    data:{
-      labels,
-      datasets:[
-        {label:lnA, data:data.map(d=>d.valueA), borderColor:COLORS[0], backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0},
-        {label:lnB, data:data.map(d=>d.valueB), borderColor:COLORS[1], backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0}
-      ]
-    },
-    options: chartOptions()
-  });
-}
-
-// ── RENDER SPREAD CHART ──
-function renderSpreadChart(data, symA, symB){
-  const labels = data.map(d=>d.t.slice(5,16));
-  const spreads = data.map(d=>d.spread);
-  const mean = spreads.reduce((a,b)=>a+b,0)/spreads.length;
-  const std = Math.sqrt(spreads.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/spreads.length);
-
-  // Počítaj križovania (spread mení znamienko)
-  let crossings=0;
-  for(let i=1;i<spreads.length;i++){
-    if((spreads[i-1]>0&&spreads[i]<0)||(spreads[i-1]<0&&spreads[i]>0)) crossings++;
-  }
-  document.getElementById('cross-count').textContent=`${crossings} križovaní`;
-
-  // Farebné body — nad priemerom zelenou, pod červenou
-  const pointColors = spreads.map(s=> s>mean+std?'rgba(0,212,170,0.6)':s<mean-std?'rgba(255,77,106,0.6)':'rgba(245,200,66,0.3)');
-
-  if(chartSpread) chartSpread.destroy();
-  chartSpread = new Chart(document.getElementById('canvas-spread').getContext('2d'),{
-    type:'line',
-    data:{
-      labels,
-      datasets:[
-        {
-          label:'Spread',
-          data:spreads,
-          borderColor:SPREAD_COLOR,
-          backgroundColor:'transparent',
-          borderWidth:1.5,
-          pointRadius:spreads.map((_,i)=>{
-            if(i===0||i===spreads.length-1)return 0;
-            const prev=spreads[i-1],curr=spreads[i];
-            return (prev>0&&curr<0)||(prev<0&&curr>0)?4:0;
-          }),
-          pointBackgroundColor:'#fff',
-          tension:0,
-        },
-        // Priemer
-        {label:'Priemer',data:spreads.map(()=>mean),borderColor:'rgba(255,255,255,0.15)',borderDash:[4,4],borderWidth:1,pointRadius:0,tension:0},
-        // +1 std
-        {label:'+1σ',data:spreads.map(()=>mean+std),borderColor:'rgba(0,212,170,0.2)',borderDash:[2,4],borderWidth:1,pointRadius:0,tension:0},
-        // -1 std
-        {label:'-1σ',data:spreads.map(()=>mean-std),borderColor:'rgba(255,77,106,0.2)',borderDash:[2,4],borderWidth:1,pointRadius:0,tension:0},
-      ]
-    },
-    options:{
-      ...chartOptions(),
-      plugins:{
-        ...chartOptions().plugins,
-        legend:{display:false}
-      }
-    }
-  });
-}
-
-// ── RENDER STATS ──
-function renderStats(data, symA, symB){
-  const spreads = data.map(d=>d.spread);
-  const mean = spreads.reduce((a,b)=>a+b,0)/spreads.length;
-  const std = Math.sqrt(spreads.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/spreads.length);
-  const current = spreads[spreads.length-1];
-  const zScore = std>0?(current-mean)/std:0;
-
-  let crossings=0;
-  for(let i=1;i<spreads.length;i++){
-    if((spreads[i-1]>0&&spreads[i]<0)||(spreads[i-1]<0&&spreads[i]>0)) crossings++;
-  }
-
-  const lnA=SYMBOL_LABELS[symA]||symA;
-  const lnB=SYMBOL_LABELS[symB]||symB;
-  const lastA=data[data.length-1];
-
-  document.getElementById('stats-row').innerHTML=[
-    statCard('Aktuálny spread','$'+current.toFixed(2),current>=0?'pos':'neg','A − B'),
-    statCard('Z-Score',zScore.toFixed(2),Math.abs(zScore)>2?'neg':Math.abs(zScore)>1?'neu':'pos','odchýlka od priemeru'),
-    statCard('Priemer spreadu','$'+mean.toFixed(2),'neu','historický'),
-    statCard('Std. odchýlka','$'+std.toFixed(2),'neu','σ'),
-    statCard('Križovania',crossings,'pos','v zobrazenom období'),
-    statCard(`Cena ${lnA}`,'$'+lastA.priceA.toFixed(2),'neu','aktuálna'),
-    statCard(`Cena ${lnB}`,'$'+lastA.priceB.toFixed(2),'neu','aktuálna'),
-  ].join('');
-}
-
-function statCard(label,value,cls,sub){
-  return`<div class="stat-card">
-    <div class="stat-label">${label}</div>
-    <div class="stat-value ${cls}">${value}</div>
-    <div class="stat-sub">${sub}</div>
-  </div>`;
-}
-
-// ── SIGNAL ──
-function updateSignal(data){
-  const spreads=data.map(d=>d.spread);
-  const mean=spreads.reduce((a,b)=>a+b,0)/spreads.length;
-  const std=Math.sqrt(spreads.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/spreads.length);
-  const current=spreads[spreads.length-1];
-  const prev=spreads[spreads.length-2]||current;
-  const zScore=std>0?(current-mean)/std:0;
-
-  const dot=document.getElementById('signal-dot');
-  const txt=document.getElementById('signal-text');
-  const sub=document.getElementById('signal-sub');
-
-  const isCrossing=(prev>0&&current<0)||(prev<0&&current>0);
-
-  if(isCrossing){
-    dot.className='signal-dot buy';
-    txt.textContent='🎯 KRIŽOVANIE — potenciálny výstup z pozície';
-    sub.textContent=`Spread prešiel cez nulu: ${prev.toFixed(2)} → ${current.toFixed(2)}`;
-  } else if(zScore>2){
-    dot.className='signal-dot sell';
-    txt.textContent='⚠ Spread výrazne nad priemerom (Z = '+zScore.toFixed(2)+')';
-    sub.textContent='Možný vstup: predaj A, kúp B';
-  } else if(zScore<-2){
-    dot.className='signal-dot sell';
-    txt.textContent='⚠ Spread výrazne pod priemerom (Z = '+zScore.toFixed(2)+')';
-    sub.textContent='Možný vstup: kúp A, predaj B';
-  } else if(Math.abs(zScore)>1){
-    dot.className='signal-dot wait';
-    txt.textContent='Spread sa odchyľuje od priemeru (Z = '+zScore.toFixed(2)+')';
-    sub.textContent='Sleduj — zatiaľ čakaj';
-  } else {
-    dot.className='signal-dot wait';
-    txt.textContent='Spread blízko priemeru — žiadny signál';
-    sub.textContent='Z-score: '+zScore.toFixed(2);
-  }
-}
-
-// ── CHART OPTIONS ──
-function chartOptions(){
-  return{
-    responsive:true, maintainAspectRatio:false, animation:{duration:200},
+// CHARTS
+function copts(h){
+  return{responsive:true,maintainAspectRatio:false,animation:{duration:150},
     interaction:{mode:'index',intersect:false},
-    plugins:{
-      legend:{display:false},
-      tooltip:{backgroundColor:'#181c23',borderColor:'#2a3140',borderWidth:1,
-        titleColor:'#6b7a8d',bodyColor:'#c8d0dc',
-        titleFont:{family:'IBM Plex Mono',size:10},
-        bodyFont:{family:'IBM Plex Mono',size:11},padding:10}
+    plugins:{legend:{display:false},
+      tooltip:{backgroundColor:'#181c23',borderColor:'#2a3140',borderWidth:1,titleColor:'#6b7a8d',bodyColor:'#c8d0dc',titleFont:{family:'IBM Plex Mono',size:9},bodyFont:{family:'IBM Plex Mono',size:10},padding:8},
+      zoom:{zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'},pan:{enabled:true,mode:'x'}}
     },
-    scales:{
-      x:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:10},maxTicksLimit:14,maxRotation:0},grid:{color:'#1e2530'}},
-      y:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:10}},grid:{color:'#1e2530'}}
-    }
-  };
+    scales:{x:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:9},maxTicksLimit:14,maxRotation:0},grid:{color:'#1a1f28'}},
+      y:{ticks:{color:'#3d4a58',font:{family:'IBM Plex Mono',size:9}},grid:{color:'#1a1f28'}}}};
 }
 
-// ── TOAST ──
-function showToast(msg,type=''){
+function renderMain(sA,sB){
+  const labels=aligned.map(d=>d.t.slice(5,16));
+  document.getElementById('title-main').textContent=`${sA} vs ${sB} — vážené pozície`;
+  document.getElementById('leg-main').innerHTML=[sA,sB].map((s,i)=>
+    `<div class="leg-item"><div class="leg-dot" style="background:${COLORS[i]}"></div>${s}</div>`).join('');
+  if(chartM)chartM.destroy();
+  chartM=new Chart(document.getElementById('c-main').getContext('2d'),{type:'line',data:{labels,datasets:[
+    {data:aligned.map(d=>d.vA),borderColor:COLORS[0],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0},
+    {data:aligned.map(d=>d.vB),borderColor:COLORS[1],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0}
+  ]},options:copts(380)});
+}
+
+function renderSpread(sA,sB){
+  const sp=aligned.map(d=>d.spread);
+  const m=avg(sp),s=std(sp,m);
+  let cr=0;for(let i=1;i<sp.length;i++)if((sp[i-1]>0&&sp[i]<0)||(sp[i-1]<0&&sp[i]>0))cr++;
+  document.getElementById('cross-lbl').textContent=`${cr} križovaní · μ=${m.toFixed(2)} · σ=${s.toFixed(2)}`;
+  const labels=aligned.map(d=>d.t.slice(5,16));
+  const ptR=sp.map((_,i)=>i>0&&i<sp.length-1&&((sp[i-1]>0&&sp[i]<0)||(sp[i-1]<0&&sp[i]>0))?5:0);
+  if(chartS)chartS.destroy();
+  chartS=new Chart(document.getElementById('c-spread').getContext('2d'),{type:'line',data:{labels,datasets:[
+    {data:sp,borderColor:'#f5c842',backgroundColor:'transparent',borderWidth:1.5,pointRadius:ptR,pointBackgroundColor:'#fff',tension:0},
+    {data:sp.map(()=>m),borderColor:'rgba(255,255,255,0.12)',borderDash:[4,4],borderWidth:1,pointRadius:0},
+    {data:sp.map(()=>m+s),borderColor:'rgba(0,212,170,0.2)',borderDash:[2,4],borderWidth:1,pointRadius:0},
+    {data:sp.map(()=>m-s),borderColor:'rgba(255,77,106,0.2)',borderDash:[2,4],borderWidth:1,pointRadius:0},
+    {data:sp.map(()=>m+2*s),borderColor:'rgba(0,212,170,0.1)',borderDash:[1,6],borderWidth:1,pointRadius:0},
+    {data:sp.map(()=>m-2*s),borderColor:'rgba(255,77,106,0.1)',borderDash:[1,6],borderWidth:1,pointRadius:0},
+  ]},options:{...copts(300),plugins:{...copts(300).plugins,legend:{display:false}}}});
+}
+
+function renderStats(sA,sB){
+  const sp=aligned.map(d=>d.spread);
+  const m=avg(sp),s=std(sp,m),curr=sp[sp.length-1],prev=sp[sp.length-2]||curr;
+  const z=s>0?(curr-m)/s:0;
+  let cr=0;for(let i=1;i<sp.length;i++)if((sp[i-1]>0&&sp[i]<0)||(sp[i-1]<0&&sp[i]>0))cr++;
+  const last=aligned[aligned.length-1];
+  const r=pearson(aligned.map(d=>d.vA),aligned.map(d=>d.vB));
+  document.getElementById('stats-grid').innerHTML=[
+    sc('Spread','$'+curr.toFixed(2),curr>=0?'green':'red','aktuálny'),
+    sc('Z-Score',z.toFixed(3),Math.abs(z)>2?'red':Math.abs(z)>1?'yellow':'green','odchýlka od μ'),
+    sc('Priemer μ','$'+m.toFixed(2),'gray','spreadu'),
+    sc('Std σ','$'+s.toFixed(2),'gray','volatilita'),
+    sc('Križovania',cr,'green','v období'),
+    sc('Korelácia r',r.toFixed(4),r>0.7?'green':r<0?'red':'yellow','Pearson'),
+    sc(sA,'$'+last.pA.toFixed(2),'gray','live cena'),
+    sc(sB,'$'+last.pB.toFixed(2),'gray','live cena'),
+  ].join('');
+}
+function sc(l,v,c,s){return`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val ${c}">${v}</div><div class="stat-sub2">${s}</div></div>`;}
+
+function updateSignal(){
+  const sp=aligned.map(d=>d.spread);
+  const m=avg(sp),s=std(sp,m);
+  const curr=sp[sp.length-1],prev=sp[sp.length-2]||curr;
+  const z=s>0?(curr-m)/s:0;
+  const thr=parseFloat(document.getElementById('alert-thr').value)||2;
+  const isCross=(prev>0&&curr<0)||(prev<0&&curr>0);
+  const sA=document.getElementById('sym-a').value,sB=document.getElementById('sym-b').value;
+  const dot=document.getElementById('sig-dot'),txt=document.getElementById('sig-text'),sub=document.getElementById('sig-sub');
+  if(isCross){
+    dot.className='sig-dot green';
+    txt.innerHTML='🎯 <strong>KRIŽOVANIE</strong> — potenciálny výstup';
+    sub.textContent=`${prev.toFixed(2)} → ${curr.toFixed(2)}`;
+    fireAlert();
+  } else if(Math.abs(z)>=thr){
+    dot.className='sig-dot red';
+    txt.innerHTML=`⚠ <strong>SIGNÁL</strong> — Z=${z.toFixed(2)} (${z>0?'+':''})`;
+    sub.textContent=z>0?`Zvažuj: Short ${sA} / Long ${sB}`:`Zvažuj: Long ${sA} / Short ${sB}`;
+    fireAlert();
+  } else if(Math.abs(z)>1){
+    dot.className='sig-dot yellow';txt.textContent=`Sleduj — Z=${z.toFixed(2)}`;sub.textContent='';
+  } else {
+    dot.className='sig-dot gray';txt.textContent=`Neutrálne — Z=${z.toFixed(2)}`;sub.textContent='';
+  }
+}
+
+function fireAlert(){
+  if(alertFired)return;alertFired=true;
+  try{const a=new AudioContext();const o=a.createOscillator();const g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=0.3;o.start();setTimeout(()=>{o.stop();},300);}catch(e){}
+  setTimeout(()=>{alertFired=false;},10000);
+}
+
+function renderCorr(sA,sB){
+  const va=aligned.map(d=>d.vA),vb=aligned.map(d=>d.vB);
+  const r=pearson(va,vb);
+  const ma=avg(va),mb=avg(vb),sa=std(va,ma),sb=std(vb,mb);
+  const win=Math.min(60,Math.floor(aligned.length/4));
+  const roll=aligned.slice(win).map((_,i)=>{
+    const wa=va.slice(i,i+win),wb=vb.slice(i,i+win);
+    return{t:aligned[i+win].t.slice(5,16),r:pearson(wa,wb)};
+  });
+  document.getElementById('corr-body').innerHTML=`
+    <div class="stats-grid" style="margin-bottom:16px">
+      ${sc('Pearson r',r.toFixed(4),r>0.7?'green':r<0?'red':'yellow','celkový')}
+      ${sc('Std '+sA,'$'+sa.toFixed(2),'gray','σ')}
+      ${sc('Std '+sB,'$'+sb.toFixed(2),'gray','σ')}
+      ${sc('Ratio σ',(sa/sb).toFixed(3),Math.abs(sa/sb-1)<0.1?'green':'yellow','ideálne ≈ 1.0')}
+    </div>
+    <div style="height:180px;position:relative"><canvas id="c-roll"></canvas></div>
+    <div class="zoom-hint">Kĺzavá korelácia — okno ${win} sviečok</div>`;
+  setTimeout(()=>{
+    const c=document.getElementById('c-roll');if(!c)return;
+    new Chart(c.getContext('2d'),{type:'line',data:{labels:roll.map(d=>d.t),datasets:[
+      {data:roll.map(d=>d.r),borderColor:'#a78bfa',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3},
+      {data:roll.map(()=>0),borderColor:'rgba(255,255,255,0.1)',borderDash:[4,4],borderWidth:1,pointRadius:0}
+    ]},options:{...copts(180),plugins:{...copts(180).plugins,legend:{display:false},zoom:{zoom:{wheel:{enabled:true},mode:'x'},pan:{enabled:true,mode:'x'}}}}});
+  },80);
+}
+
+// HISTORY
+function loadEntries(){const h=localStorage.getItem('pt_entries');entries=h?JSON.parse(h):[];}
+function saveEntries(){localStorage.setItem('pt_entries',JSON.stringify(entries));}
+function addEntry(){
+  if(!aligned.length){toast('Najprv načítaj dáta','err');return;}
+  const last=aligned[aligned.length-1];
+  const sp=aligned.map(d=>d.spread);
+  const m=avg(sp),s=std(sp,m);
+  const z=s>0?(last.spread-m)/s:0;
+  const sA=document.getElementById('sym-a').value,sB=document.getElementById('sym-b').value;
+  entries.unshift({id:Date.now(),time:last.t,sA,sB,
+    lotA:document.getElementById('lot-a').value,lotB:document.getElementById('lot-b').value,
+    pA:last.pA.toFixed(4),pB:last.pB.toFixed(4),
+    spread:last.spread.toFixed(2),z:z.toFixed(3),
+    dir:z>0?`Short ${sA} / Long ${sB}`:`Long ${sA} / Short ${sB}`});
+  saveEntries();renderHist();
+  if(activeTab!=='hist')switchTab('hist');
+  toast('Vstup zaznamenaný ✓','ok');
+}
+function removeEntry(id){entries=entries.filter(e=>e.id!==id);saveEntries();renderHist();}
+function clearHist(){if(!confirm('Vymazať všetky záznamy?'))return;entries=[];saveEntries();renderHist();}
+function renderHist(){
+  const el=document.getElementById('hist-body');
+  if(!entries.length){el.innerHTML='<div style="text-align:center;padding:32px;font-family:var(--font-mono);font-size:11px;color:var(--text3)">Žiadne záznamy. Klikni "+ Zaznačiť vstup".</div>';return;}
+  el.innerHTML=`<table class="history-table"><thead><tr><th>Čas</th><th>Pár</th><th>Lot A</th><th>Lot B</th><th>Cena A</th><th>Cena B</th><th>Spread</th><th>Z</th><th>Smer</th><th></th></tr></thead><tbody>
+  ${entries.map(e=>`<tr><td>${e.time}</td><td>${e.sA}/${e.sB}</td><td>${e.lotA}</td><td>${e.lotB}</td><td>$${e.pA}</td><td>$${e.pB}</td>
+  <td class="${parseFloat(e.spread)>=0?'green':'red'}">$${e.spread}</td>
+  <td class="${Math.abs(parseFloat(e.z))>2?'red':'yellow'}">${e.z}</td>
+  <td style="font-size:9px;color:${e.dir.includes('Long '+e.sA)?'var(--accent)':'var(--red)'}">${e.dir}</td>
+  <td><button class="btn btn-red btn-sm" onclick="removeEntry(${e.id})">×</button></td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+// TABS
+function switchTab(tab){
+  activeTab=tab;
+  ['main','spread','corr','hist'].forEach(t=>{
+    document.getElementById('t-'+t).className='tab-btn'+(t===tab?' active':'');
+    document.getElementById('c-'+t+'-wrap').style.display=t===tab?'block':'none';
+  });
+  if(tab==='corr'&&aligned.length)renderCorr(document.getElementById('sym-a').value,document.getElementById('sym-b').value);
+  if(tab==='hist')renderHist();
+}
+
+// EXPORT
+function exportCSV(){
+  if(!aligned.length){toast('Žiadne dáta','err');return;}
+  const sA=document.getElementById('sym-a').value,sB=document.getElementById('sym-b').value;
+  const sp=aligned.map(d=>d.spread),m=avg(sp),s=std(sp,m);
+  const hdr=`Čas,${sA} cena,${sB} cena,${sA} hodnota,${sB} hodnota,Spread,Z-Score\n`;
+  const rows=aligned.map(d=>{const z=s>0?(d.spread-m)/s:0;return`${d.t},${d.pA},${d.pB},${d.vA.toFixed(2)},${d.vB.toFixed(2)},${d.spread.toFixed(2)},${z.toFixed(3)}`;}).join('\n');
+  const blob=new Blob(['\uFEFF'+hdr+rows],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pairs_${sA}_${sB}_${period}.csv`;a.click();
+  toast('CSV exportovaný ✓','ok');
+}
+
+function exportXLSX(){
+  if(!aligned.length){toast('Žiadne dáta','err');return;}
+  const sA=document.getElementById('sym-a').value,sB=document.getElementById('sym-b').value;
+  const sp=aligned.map(d=>d.spread),m=avg(sp),s=std(sp,m);
+  const wb=XLSX.utils.book_new();
+  const wsData=[['Čas',sA+' cena',sB+' cena',sA+' hodnota',sB+' hodnota','Spread','Z-Score'],
+    ...aligned.map(d=>{const z=s>0?(d.spread-m)/s:0;return[d.t,d.pA,d.pB,+d.vA.toFixed(2),+d.vB.toFixed(2),+d.spread.toFixed(2),+z.toFixed(3)];})];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wsData),'Dáta');
+  if(entries.length){
+    const wh=[['Čas','A','B','Lot A','Lot B','Cena A','Cena B','Spread','Z','Smer'],
+      ...entries.map(e=>[e.time,e.sA,e.sB,e.lotA,e.lotB,e.pA,e.pB,e.spread,e.z,e.dir])];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wh),'História');
+  }
+  XLSX.writeFile(wb,`pairs_${sA}_${sB}_${period}.xlsx`);
+  toast('Excel exportovaný ✓','ok');
+}
+
+// ZOOM
+function zm(which,factor){(which==='main'?chartM:chartS)?.zoom(factor);}
+function resetZoom(){chartM?.resetZoom();chartS?.resetZoom();}
+
+// MATH
+function avg(a){return a.reduce((s,v)=>s+v,0)/a.length;}
+function std(a,m){return Math.sqrt(a.map(v=>(v-m)**2).reduce((s,v)=>s+v,0)/a.length);}
+function pearson(a,b){
+  const n=Math.min(a.length,b.length),ma=avg(a.slice(0,n)),mb=avg(b.slice(0,n));
+  let num=0,da=0,db=0;
+  for(let i=0;i<n;i++){const ea=a[i]-ma,eb=b[i]-mb;num+=ea*eb;da+=ea*ea;db+=eb*eb;}
+  return da&&db?num/Math.sqrt(da*db):0;
+}
+
+// TOAST
+function toast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className='toast show'+(type?' '+type:'');
-  setTimeout(()=>{t.className='toast';},3500);
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.className='toast';},4000);
 }
 
-loadKeys();
+loadKeys();updateRatio();loadEntries();
+document.getElementById('src-badge').className='src-badge yahoo';
+document.getElementById('src-badge').textContent='Yahoo Finance · 1min';
 </script>
 </body>
 </html>
