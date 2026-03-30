@@ -505,7 +505,14 @@ let charts={main:null,spread:null,ratio:null,roll:null};
 let autoLot=true, liveTimer=null;
 let period='1d', activeTab='main';
 let priceA=0, priceB=0, aligned=[], entries=[];
-let alertFired=false;
+let alertFired=false, showPct=false;
+
+// Contract sizes (jednotiek na 1 lot)
+const CONTRACT_SIZE={
+  'GC=F':100,'SI=F':5000,'PL=F':50,'PA=F':100,
+  'HG=F':25000,'CL=F':1000,'BZ=F':1000,'NG=F':10000,
+};
+function csz(sym){return CONTRACT_SIZE[sym.toUpperCase()]||1;}
 
 // ══════════════════════════════════════════════
 //  CONFIG & AUTH
@@ -567,6 +574,11 @@ function selectSym(side,sym,name){
   document.getElementById('dd-'+side).classList.remove('open');
   priceA=0;priceB=0;
   document.getElementById('px-'+side).textContent='—';
+  // Zobraz contract size ak je definovaný
+  const cs=csz(sym);
+  if(cs>1){
+    document.getElementById('px-'+side).textContent=`— (1 lot = ${cs.toLocaleString()} oz)`;
+  }
 }
 
 function onSymInput(side){
@@ -740,7 +752,11 @@ async function loadData(){
     document.getElementById('px-b').textContent=priceB?fmt(priceB):'—';
 
     const la=parseFloat(document.getElementById('lot-a').value)||1;
-    if(autoLot&&priceA&&priceB)document.getElementById('lot-b').value=((priceA*la)/priceB).toFixed(3);
+    if(autoLot&&priceA&&priceB){
+      const sA2=document.getElementById('sym-a').value.trim().toUpperCase();
+      const sB2=document.getElementById('sym-b').value.trim().toUpperCase();
+      document.getElementById('lot-b').value=((priceA*la*csz(sA2))/(priceB*csz(sB2))).toFixed(3);
+    }
     updateRatio();
 
     const lb=parseFloat(document.getElementById('lot-b').value)||1;
@@ -775,11 +791,14 @@ async function loadData(){
 //  ALIGN SERIES
 // ══════════════════════════════════════════════
 function alignSeries(a,b,la,lb){
+  const sA=document.getElementById('sym-a').value.trim().toUpperCase();
+  const sB=document.getElementById('sym-b').value.trim().toUpperCase();
+  const cA=csz(sA), cB=csz(sB);
   const mb={};for(const p of b)mb[p.t]=p.price;
   return a.filter(p=>mb[p.t]&&p.price).map(p=>({
     t:p.t,pA:p.price,pB:mb[p.t],
-    vA:p.price*la,vB:mb[p.t]*lb,
-    spread:p.price*la-mb[p.t]*lb,
+    vA:p.price*la*cA,vB:mb[p.t]*lb*cB,
+    spread:p.price*la*cA - mb[p.t]*lb*cB,
     ratio:p.price/mb[p.t]
   }));
 }
@@ -789,8 +808,11 @@ function alignSeries(a,b,la,lb){
 // ══════════════════════════════════════════════
 function onLotA(){
   if(autoLot&&priceA&&priceB){
+    const sA=document.getElementById('sym-a').value.trim().toUpperCase();
+    const sB=document.getElementById('sym-b').value.trim().toUpperCase();
     const la=parseFloat(document.getElementById('lot-a').value)||1;
-    document.getElementById('lot-b').value=((priceA*la)/priceB).toFixed(3);
+    // dollar-neutral: priceA * la * cA = priceB * lb * cB
+    document.getElementById('lot-b').value=((priceA*la*csz(sA))/(priceB*csz(sB))).toFixed(3);
   }
   updateRatio();
 }
@@ -807,9 +829,11 @@ function toggleAuto(){
   if(autoLot)onLotA();
 }
 function updateRatio(){
+  const sA=document.getElementById('sym-a').value.trim().toUpperCase();
+  const sB=document.getElementById('sym-b').value.trim().toUpperCase();
   const la=parseFloat(document.getElementById('lot-a').value)||0;
   const lb=parseFloat(document.getElementById('lot-b').value)||0;
-  const va=la*priceA,vb=lb*priceB;
+  const va=la*priceA*csz(sA), vb=lb*priceB*csz(sB);
   document.getElementById('val-a').textContent=va?'$'+va.toFixed(0):'—';
   document.getElementById('val-b').textContent=vb?'$'+vb.toFixed(0):'—';
   const r=vb>0?va/vb:0;
@@ -846,12 +870,31 @@ function renderMain(sA,sB){
   const labels=aligned.map(d=>d.t.slice(5,16));
   document.getElementById('title-main').textContent=`${sA} vs ${sB} — vážené pozície`;
   document.getElementById('leg-main').innerHTML=[sA,sB].map((s,i)=>
-    `<div class="leg-item"><div class="leg-dot" style="background:${COLORS[i]}"></div>${s}</div>`).join('');
+    `<div class="leg-item"><div class="leg-dot" style="background:${COLORS[i]}"></div>${s}</div>`).join('')+
+    `<button class="btn btn-ghost btn-sm" onclick="togglePct()" id="btn-pct" style="margin-left:8px">${showPct?'$ Absolútne':'% Relatívne'}</button>`;
   if(charts.main)charts.main.destroy();
+
+  // Percentuálna normalizácia — base = prvá hodnota = 100%
+  const base0=aligned[0].vA, base1=aligned[0].vB;
+  const dataA=showPct?aligned.map(d=>((d.vA/base0-1)*100)):aligned.map(d=>d.vA);
+  const dataB=showPct?aligned.map(d=>((d.vB/base1-1)*100)):aligned.map(d=>d.vB);
+
+  const opts=copts(360);
+  if(showPct){
+    opts.scales.y.ticks.callback=(v)=>v.toFixed(2)+'%';
+  }
+
   charts.main=new Chart(document.getElementById('c-main').getContext('2d'),{type:'line',data:{labels,datasets:[
-    {data:aligned.map(d=>d.vA),borderColor:COLORS[0],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0},
-    {data:aligned.map(d=>d.vB),borderColor:COLORS[1],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0}
-  ]},options:copts(360)});
+    {data:dataA,borderColor:COLORS[0],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0},
+    {data:dataB,borderColor:COLORS[1],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0}
+  ]},options:opts});
+}
+
+function togglePct(){
+  showPct=!showPct;
+  const sA=document.getElementById('sym-a').value;
+  const sB=document.getElementById('sym-b').value;
+  renderMain(sA,sB);
 }
 
 function renderSpread(sA,sB){
